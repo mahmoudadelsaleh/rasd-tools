@@ -3,112 +3,95 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>لوحة النتائج v2026 - الكنترول الذكي</title>
+    <title>النتائج والتصدير</title>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
-        :root { --primary: #1e293b; --accent: #3b82f6; --success: #10b981; --bg: #f8fafc; }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; }
-        header { background: var(--primary); color: white; padding: 20px; text-align: center; }
-        .container { max-width: 1200px; margin: 20px auto; padding: 0 15px; }
-        .filters { background: white; padding: 20px; border-radius: 12px; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 20px; }
-        select, button { padding: 12px; border-radius: 8px; border: 1px solid #cbd5e1; font-weight: bold; }
-        .btn-export { background: var(--success); color: white; cursor: pointer; border: none; }
-        .table-container { background: white; padding: 15px; border-radius: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); overflow-x: auto; }
-        table { width: 100%; border-collapse: collapse; min-width: 800px; }
-        th, td { border: 1px solid #e2e8f0; padding: 10px; text-align: center; }
-        th { background: #f1f5f9; color: #475569; }
-        .student-col { text-align: right; font-weight: bold; }
+        :root { --primary: #0f172a; --accent: #3b82f6; }
+        body { font-family: 'Segoe UI', sans-serif; background: #f1f5f9; margin: 0; }
+        .top-bar { background: var(--primary); color: white; padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; }
+        .nav-links a { color: #cbd5e1; text-decoration: none; margin-left: 15px; font-weight: bold; }
+        .nav-links a.active { color: white; border-bottom: 2px solid var(--accent); }
+        .container { padding: 20px; max-width: 1200px; margin: auto; }
+        .controls { background: white; padding: 20px; border-radius: 12px; display: flex; gap: 10px; margin-bottom: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        table { width: 100%; border-collapse: collapse; background: white; border-radius: 12px; overflow: hidden; }
+        th, td { border: 1px solid #e2e8f0; padding: 12px; text-align: center; }
+        th { background: #f8fafc; color: #475569; }
+        .btn-exp { background: #0891b2; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; }
     </style>
 </head>
 <body>
-
-<header><h2>📊 مركز استخراج النتائج والتقارير v2026</h2></header>
-
-<div class="container">
-    <div class="filters">
-        <select id="resGrade" onchange="loadClasses()"><option value="">اختر الصف...</option></select>
-        <select id="resClass"><option value="">اختر الفصل...</option></select>
-        <button class="btn-export" onclick="fetchAndDisplay()">عرض النتائج 🔍</button>
-        <button class="btn-export" style="background:#0891b2" onclick="exportToExcel()">تصدير Excel 📥</button>
+    <div class="top-bar">
+        <div class="nav-links">
+            <a href="school-setup.html">🏠 الإعدادات</a>
+            <a href="manage-data.html">👥 الإدارة</a>
+            <a href="results.html" class="active">📊 النتائج</a>
+        </div>
+        <div><span id="uName"></span> <button onclick="logout()" style="background:red; color:white; border:none; padding:5px 10px; border-radius:5px; cursor:pointer;">خروج</button></div>
     </div>
-    <div class="table-container">
-        <table id="resultsTable">
-            <thead><tr id="tableHeader"><th>م</th><th style="width:250px">اسم الطالب</th><th>كود الفصل</th></tr></thead>
-            <tbody></tbody>
-        </table>
+
+    <div class="container">
+        <div class="controls">
+            <select id="resGrade"><option value="">اختر الصف...</option></select>
+            <button class="btn-exp" style="background:#3b82f6" onclick="fetchResults()">عرض البيانات</button>
+            <button class="btn-exp" onclick="exportData()">تصدير Excel 📥</button>
+        </div>
+        <div style="overflow-x:auto;">
+            <table id="resTable">
+                <thead><tr id="hRow"><th>م</th><th>الاسم</th><th>الفصل</th></tr></thead>
+                <tbody></tbody>
+            </table>
+        </div>
     </div>
-</div>
 
 <script>
     const firebaseConfig = { apiKey: "AIzaSyBePGZiqMPmZQdg36jZ4Rkdtd7OISxmob8", projectId: "rasd-tools" };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
-    let schoolConfig = null, studentsRaw = [], gradesRaw = [];
-
-    async function init() {
+    window.onload = async () => {
+        document.getElementById('uName').innerText = sessionStorage.getItem('userName');
         const conf = await db.collection('system').doc('config').get();
-        if(conf.exists) { schoolConfig = conf.data();
-            schoolConfig.grades.forEach(g => document.getElementById('resGrade').innerHTML += `<option value="${g.name}">${g.name}</option>`);
+        if(conf.exists) {
+            conf.data().grades.forEach(g => document.getElementById('resGrade').innerHTML += `<option value="${g.name}">${g.name}</option>`);
         }
-    }
+    };
 
-    function loadClasses() {
-        const gName = document.getElementById('resGrade').value;
-        const cSel = document.getElementById('resClass'); cSel.innerHTML = '<option value="">كل الفصول</option>';
-        const grade = schoolConfig.grades.find(g => g.name === gName);
-        if(grade) grade.classes.forEach(c => cSel.innerHTML += `<option value="${c.name}">${c.name}</option>`);
-    }
-
-    async function fetchAndDisplay() {
-        const gradeName = document.getElementById('resGrade').value;
-        const clsName = document.getElementById('resClass').value;
-        if(!gradeName) return alert("اختر الصف");
-
-        const gNum = gradeName.match(/\d+/)[0];
-        const classCode = clsName ? `${gNum}/${clsName}` : null;
-
-        let sQuery = db.collection('students');
-        if(classCode) sQuery = sQuery.where('classCode', '==', classCode);
+    async function fetchResults() {
+        const grade = document.getElementById('resGrade').value;
+        const gNum = grade.match(/\d+/)[0];
+        const sSnap = await db.collection('students').get();
+        const students = sSnap.docs.map(d => ({id:d.id, ...d.data()})).filter(s => s.classCode.startsWith(gNum + '/')).sort((a,b) => a.sortOrder - b.sortOrder);
         
-        const sSnap = await sQuery.get();
-        studentsRaw = sSnap.docs.map(d => ({id: d.id, ...d.data()}))
-                                .filter(s => s.classCode.startsWith(gNum + '/'))
-                                .sort((a,b) => a.sortOrder - b.sortOrder);
-
-        const gSnap = await db.collection('grades').get(); gradesRaw = gSnap.docs.map(d => d.data());
-        renderTable();
-    }
-
-    function renderTable() {
-        const tbody = document.querySelector('#resultsTable tbody');
-        const theadRow = document.getElementById('tableHeader');
-        tbody.innerHTML = ''; theadRow.innerHTML = `<th>م</th><th>اسم الطالب</th><th>كود الفصل</th>`;
+        const gSnap = await db.collection('grades').get();
+        const grades = gSnap.docs.map(d => d.data());
         
-        const subjects = [...new Set(gradesRaw.map(g => g.subject))];
-        subjects.forEach(sub => theadRow.innerHTML += `<th>${sub} (ت)</th><th>${sub} (و)</th><th>${sub} (س)</th>`);
-
-        studentsRaw.forEach(s => {
-            let row = `<td>${s.sortOrder}</td><td class="student-col">${s.name}</td><td>${s.classCode}</td>`;
+        const subjects = [...new Set(grades.map(g => g.subject))];
+        const hRow = document.getElementById('hRow');
+        hRow.innerHTML = `<th>م</th><th>الاسم</th><th>الفصل</th>` + subjects.map(s => `<th>${s} (ت)</th><th>${s} (و)</th>`).join('');
+        
+        const tbody = document.querySelector('#resTable tbody');
+        tbody.innerHTML = students.map(s => {
+            let cols = `<td>${s.sortOrder}</td><td style="text-align:right">${s.name}</td><td>${s.classCode}</td>`;
             subjects.forEach(sub => {
-                const g = gradesRaw.filter(x => x.sid === s.id && x.subject === sub);
-                row += `<td>${g.find(x => x.type === 't')?.score || '-'}</td><td>${g.find(x => x.type === 'v')?.score || '-'}</td><td>${g.find(x => x.type === 's')?.score || '-'}</td>`;
+                const scT = grades.find(g => g.sid === s.id && g.subject === sub && g.type === 't')?.score || '-';
+                const scV = grades.find(g => g.sid === s.id && g.subject === sub && g.type === 'v')?.score || '-';
+                cols += `<td>${scT}</td><td>${scV}</td>`;
             });
-            tbody.innerHTML += `<tr>${row}</tr>`;
-        });
+            return `<tr>${cols}</tr>`;
+        }).join('');
     }
 
-    function exportToExcel() {
-        const table = document.getElementById('resultsTable');
-        const ws = XLSX.utils.table_to_sheet(table);
+    function exportData() {
+        const ws = XLSX.utils.table_to_sheet(document.getElementById('resTable'));
         ws['!views'] = [{RTL: true}];
-        const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "النتائج");
-        XLSX.writeFile(wb, `نتائج_v2026.xlsx`);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "النتائج");
+        XLSX.writeFile(wb, `نتائج_الطلاب_${new Date().toLocaleDateString()}.xlsx`);
     }
 
-    window.onload = init;
+    function logout() { sessionStorage.clear(); window.location.href="index.html"; }
 </script>
 </body>
 </html>
