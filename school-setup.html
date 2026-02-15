@@ -2,7 +2,81 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>University Portal | Login</title>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
+    <style>
+        :root { --navy: #0a192f; --gold: #c5a059; --white: #ffffff; }
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #f4f7f9; margin: 0; display: flex; justify-content: center; align-items: center; height: 100vh; overflow: hidden; }
+        .login-wrap { width: 90%; max-width: 400px; background: var(--white); border-radius: 20px; box-shadow: 0 15px 35px rgba(0,0,0,0.1); padding: 40px 25px; text-align: center; border-top: 6px solid var(--gold); }
+        .brand-logo { font-size: 26px; font-weight: 800; color: var(--navy); margin-bottom: 30px; letter-spacing: 1px; }
+        .brand-logo span { color: var(--gold); }
+        input { width: 100%; padding: 15px; margin-bottom: 15px; border: 1px solid #e2e8f0; border-radius: 10px; font-size: 16px; box-sizing: border-box; transition: 0.3s; }
+        input:focus { border-color: var(--gold); outline: none; }
+        button { width: 100%; padding: 16px; background: var(--navy); color: var(--gold); border: none; border-radius: 10px; font-weight: bold; font-size: 18px; cursor: pointer; }
+        .welcome-ov { display: none; font-size: 20px; font-weight: bold; color: var(--navy); }
+        .rem-box { display: flex; align-items: center; gap: 10px; font-size: 14px; margin-bottom: 20px; color: #64748b; }
+    </style>
+</head>
+<body>
+    <div class="login-wrap">
+        <div id="login_ui">
+            <div class="brand-logo">UNIVERSITY<span>HUB</span></div>
+            <input type="text" id="user" placeholder="اسم المستخدم">
+            <input type="password" id="pass" placeholder="كلمة المرور">
+            <div class="rem-box"><input type="checkbox" id="remMe" style="width:auto"> تذكر بياناتي على هذا الجهاز</div>
+            <button onclick="handleLogin()">دخول المنصة 🏛️</button>
+            <p id="msg" style="color:red; margin-top:15px; font-size:14px;"></p>
+        </div>
+        <div id="welcome_ui" class="welcome-ov"></div>
+    </div>
+<script>
+    const firebaseConfig = { apiKey: "AIzaSyBePGZiqMPmZQdg36jZ4Rkdtd7OISxmob8", projectId: "rasd-tools" };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    window.onload = () => {
+        if(localStorage.getItem('savedUser')) {
+            document.getElementById('user').value = localStorage.getItem('savedUser');
+            document.getElementById('pass').value = localStorage.getItem('savedPass');
+            document.getElementById('remMe').checked = true;
+        }
+    };
+
+    async function handleLogin() {
+        const u = document.getElementById('user').value.trim();
+        const p = document.getElementById('pass').value.trim();
+        if(u === "almas2021" && p === "790707071") { 
+            loginSuccess(u, "الماستر محمود عادل", "school-setup.html"); 
+        } else {
+            const doc = await db.collection('teachers').doc(u).get();
+            if(doc.exists && doc.data().pass === p) {
+                loginSuccess(u, `الأستاذ/ ${doc.data().name}`, "teacher-panel.html");
+            } else { document.getElementById('msg').innerText = "بيانات الدخول غير صحيحة"; }
+        }
+    }
+
+    function loginSuccess(uid, name, target) {
+        if(document.getElementById('remMe').checked) {
+            localStorage.setItem('savedUser', document.getElementById('user').value);
+            localStorage.setItem('savedPass', document.getElementById('pass').value);
+        } else { localStorage.clear(); }
+        sessionStorage.setItem('userName', name);
+        document.getElementById('login_ui').style.display = 'none';
+        const w = document.getElementById('welcome_ui');
+        w.innerHTML = `👋 مرحباً بك<br><span style="color:var(--gold)">${name}</span>`;
+        w.style.display = 'block';
+        setTimeout(() => window.location.href = target, 1500);
+    }
+</script>
+</body>
+</html>
+width, initial-scale=1.0">
     <title>Master Hub v2026 | مدرسة محمود عادل صالح</title>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
