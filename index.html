@@ -3,36 +3,32 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>تسجيل دخول النظام v2026</title>
+    <title>دخول نظام الرصد v2026</title>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
     <style>
         :root { --primary: #0f172a; --accent: #3b82f6; --bg: #f1f5f9; }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-        .login-card { background: white; padding: 35px; border-radius: 25px; box-shadow: 0 20px 50px rgba(0,0,0,0.1); width: 100%; max-width: 400px; text-align: center; border: 1px solid #e2e8f0; }
-        .welcome-msg { font-size: 18px; color: var(--accent); font-weight: bold; margin-bottom: 20px; display: none; }
-        input { width: 100%; padding: 14px; margin: 10px 0; border-radius: 12px; border: 1px solid #cbd5e1; font-size: 16px; transition: 0.3s; }
-        input:focus { border-color: var(--accent); outline: none; box-shadow: 0 0 0 4px rgba(59,130,246,0.1); }
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--bg); display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .login-card { background: white; padding: 40px; border-radius: 25px; box-shadow: 0 20px 50px rgba(0,0,0,0.1); width: 100%; max-width: 400px; text-align: center; }
+        .welcome-msg { font-size: 20px; color: var(--accent); font-weight: bold; margin-bottom: 20px; display: none; }
+        input { width: 100%; padding: 14px; margin: 10px 0; border-radius: 12px; border: 1px solid #cbd5e1; font-size: 16px; box-sizing: border-box; }
         .rem-box { display: flex; align-items: center; gap: 8px; font-size: 14px; margin: 10px 0; color: #64748b; }
         button { width: 100%; padding: 14px; border-radius: 12px; border: none; background: var(--primary); color: white; font-weight: bold; cursor: pointer; font-size: 16px; margin-top: 15px; }
-        #status { margin-top: 15px; font-size: 14px; font-weight: 500; }
+        #status { margin-top: 15px; font-size: 14px; color: red; }
     </style>
 </head>
 <body>
-
-<div class="login-card">
-    <div id="welcome" class="welcome-msg"></div>
-    <h2 id="loginTitle">🔑 دخول نظام الرصد</h2>
-    <div id="loginForm">
-        <input type="text" id="user" placeholder="اسم المستخدم">
-        <input type="password" id="pass" placeholder="كلمة المرور">
-        <div class="rem-box">
-            <input type="checkbox" id="remMe" style="width: auto;"> حفظ بيانات الدخول
+    <div class="login-card">
+        <div id="welcome" class="welcome-msg"></div>
+        <h2 id="loginTitle">🔑 دخول النظام</h2>
+        <div id="loginForm">
+            <input type="text" id="user" placeholder="اسم المستخدم">
+            <input type="password" id="pass" placeholder="كلمة المرور">
+            <div class="rem-box"><input type="checkbox" id="remMe"> حفظ بيانات الدخول</div>
+            <button onclick="handleLogin()">دخول 🚀</button>
         </div>
-        <button onclick="handleLogin()">دخول النظام 🚀</button>
+        <div id="status"></div>
     </div>
-    <div id="status"></div>
-</div>
 
 <script>
     const firebaseConfig = { apiKey: "AIzaSyBePGZiqMPmZQdg36jZ4Rkdtd7OISxmob8", projectId: "rasd-tools" };
@@ -40,55 +36,41 @@
     const db = firebase.firestore();
 
     window.onload = () => {
-        const savedUser = localStorage.getItem('savedUser');
-        const savedPass = localStorage.getItem('savedPass');
-        if(savedUser && savedPass) {
-            document.getElementById('user').value = savedUser;
-            document.getElementById('pass').value = savedPass;
+        if(localStorage.getItem('savedUser')) {
+            document.getElementById('user').value = localStorage.getItem('savedUser');
+            document.getElementById('pass').value = localStorage.getItem('savedPass');
             document.getElementById('remMe').checked = true;
         }
     };
 
     async function handleLogin() {
-        const user = document.getElementById('user').value.trim();
-        const pass = document.getElementById('pass').value.trim();
-        const status = document.getElementById('status');
-
-        if(user === "almas2021" && pass === "790707071") {
-            processLogin(user, "الماستر محمود عادل", "school-setup.html");
-            return;
-        }
-
-        try {
-            const doc = await db.collection('teachers').doc(user).get();
-            if(doc.exists && doc.data().pass === pass) {
-                const name = doc.data().name;
-                await db.collection('teachers').doc(user).update({ lastLogin: Date.now() });
-                processLogin(user, `الأستاذ/ ${name}`, "teacher-panel.html");
+        const u = document.getElementById('user').value.trim();
+        const p = document.getElementById('pass').value.trim();
+        
+        if(u === "almas2021" && p === "790707071") {
+            completeLogin(u, "الماستر محمود عادل", "school-setup.html");
+        } else {
+            const doc = await db.collection('teachers').doc(u).get();
+            if(doc.exists && doc.data().pass === p) {
+                completeLogin(u, `الأستاذ/ ${doc.data().name}`, "teacher-panel.html");
             } else {
-                status.style.color = "red";
-                status.innerText = "❌ خطأ في البيانات";
+                document.getElementById('status').innerText = "❌ خطأ في البيانات";
             }
-        } catch(e) { status.innerText = "📡 مشكلة في الاتصال"; }
+        }
     }
 
-    function processLogin(uid, displayName, target) {
+    function completeLogin(uid, name, target) {
         if(document.getElementById('remMe').checked) {
             localStorage.setItem('savedUser', document.getElementById('user').value);
             localStorage.setItem('savedPass', document.getElementById('pass').value);
-        } else {
-            localStorage.removeItem('savedUser'); localStorage.removeItem('savedPass');
-        }
+        } else { localStorage.clear(); }
         
         sessionStorage.setItem('userEmail', uid);
-        sessionStorage.setItem('userName', displayName);
-        
+        sessionStorage.setItem('userName', name);
         document.getElementById('loginForm').style.display = 'none';
         document.getElementById('loginTitle').style.display = 'none';
-        const w = document.getElementById('welcome');
-        w.innerText = `👋 أهلاً بك يا ${displayName}`;
-        w.style.display = 'block';
-        
+        document.getElementById('welcome').innerText = `👋 أهلاً بك\n${name}`;
+        document.getElementById('welcome').style.display = 'block';
         setTimeout(() => window.location.href = target, 1500);
     }
 </script>
