@@ -2,63 +2,66 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Master Control Hub v2026</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Master Control Hub v2026 | مدرسة محمود عادل</title>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
-        :root { --navy: #0a192f; --gold: #c5a059; --bg: #f8fafc; }
-        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--bg); margin: 0; }
-        .academic-header { background: var(--navy); color: white; padding: 15px 20px; border-bottom: 3px solid var(--gold); display: flex; justify-content: space-between; align-items: center; }
-        .container { padding: 15px; max-width: 1450px; margin: auto; }
-        .card { background: white; border-radius: 12px; padding: 20px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border-right: 5px solid var(--gold); }
-        .grid-filters { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; margin-bottom: 15px; }
-        select { padding: 10px; border: 1px solid #e2e8f0; border-radius: 8px; font-weight: bold; }
-        .btn-action { padding: 12px; background: var(--navy); color: var(--gold); border: none; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.3s; }
-        .table-wrap { overflow-x: auto; background: white; border-radius: 12px; border: 1px solid #e2e8f0; max-height: 700px; }
+        :root { --navy: #0a192f; --gold: #c5a059; --bg: #f8fafc; --white: #ffffff; }
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--bg); margin: 0; color: var(--navy); }
+        .academic-header { background: var(--navy); color: white; padding: 15px 25px; border-bottom: 4px solid var(--gold); display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 1000; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
+        .container { padding: 20px; max-width: 1500px; margin: auto; }
+        .card { background: var(--white); border-radius: 12px; padding: 25px; margin-bottom: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); border-right: 6px solid var(--gold); }
+        .grid-filters { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 20px; }
+        select, input { padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-weight: bold; background: #fff; }
+        .btn-gold { padding: 15px 30px; background: var(--gold); color: var(--navy); border: none; border-radius: 8px; font-weight: 800; cursor: pointer; transition: 0.3s; width: 100%; text-transform: uppercase; }
+        .btn-gold:hover { background: #b08d4a; transform: translateY(-2px); }
+        .table-wrap { overflow-x: auto; background: white; border-radius: 12px; border: 1px solid #e2e8f0; max-height: 750px; }
         table { width: 100%; border-collapse: collapse; font-size: 11px; text-align: center; }
-        th { background: #f1f5f9; position: sticky; top: 0; z-index: 10; padding: 10px; border: 1px solid #cbd5e1; white-space: nowrap; }
-        td { border: 1px solid #e2e8f0; padding: 8px; }
-        .type-badge { padding: 2px 8px; border-radius: 10px; font-size: 10px; color: white; }
-        .sci { background: #0369a1; } .lit { background: #b91c1c; }
+        th { background: #f1f5f9; position: sticky; top: 0; z-index: 10; padding: 10px; border: 1px solid #cbd5e1; }
+        td { border: 1px solid #e2e8f0; padding: 6px; }
+        .sub-header { background: #fdfbf7; font-weight: bold; color: var(--navy); }
+        .total-cell { background: #fffbeb; font-weight: bold; color: #92400e; }
     </style>
 </head>
 <body>
 
-    <header class="academic-header">
-        <div style="font-size: 18px; font-weight: 800;">🏛️ نظام استخراج شيتات الكنترول الموحدة</div>
-        <a href="manage-data.html" style="color:var(--gold); text-decoration:none; font-weight:bold;">العودة للإدارة ⬅️</a>
-    </header>
-
-    <div class="container">
-        <div class="card">
-            <h3>⚙️ تحديد نطاق التقرير</h3>
-            <div class="grid-filters">
-                <select id="repGrade" onchange="updateFilters()"><option value="">اختر الصف...</option></select>
-                <select id="repClass"><option value="">كل الفصول</option></select>
-                <select id="repType">
-                    <option value="all">كل التخصصات</option>
-                    <option value="علمي">قسم علمي فقط</option>
-                    <option value="أدبي">قسم أدبي فقط</option>
-                </select>
-                <select id="repPeriod">
-                    <option value="full">التقرير الشامل (كل المواد والأسابيع)</option>
-                    <option value="p1">الفترة الأولى (1-7)</option>
-                    <option value="p2">الفترة الثانية (8-14)</option>
-                </select>
-            </div>
-            <button class="btn-action" style="width:100%" onclick="generateProReport()">توليد تقرير الكنترول المخصص 🔍</button>
-            <button class="btn-action" style="width:100%; margin-top:10px; background:#065f46; color:white;" onclick="exportProExcel()">تصدير Excel RTL 📥</button>
-        </div>
-
-        <div class="table-wrap">
-            <table id="masterControlTable">
-                <thead id="mHead"></thead>
-                <tbody id="mBody"></tbody>
-            </table>
-        </div>
+<header class="academic-header">
+    <div style="font-size: 20px; font-weight: 800;">🏛️ UNIVERSITY<span style="color:var(--gold)">HUB</span> | كشوف الكنترول</div>
+    <div style="display:flex; gap:15px; align-items:center;">
+        <a href="manage-data.html" style="color:var(--gold); text-decoration:none; font-weight:bold; font-size:14px;">العودة للإدارة ⬅️</a>
+        <button onclick="logout()" style="background:transparent; border:1px solid var(--gold); color:var(--gold); padding:5px 12px; border-radius:6px; cursor:pointer;">خروج</button>
     </div>
+</header>
+
+<div class="container">
+    <div class="card">
+        <div class="grid-filters">
+            <select id="gradeSel" onchange="updateClassList()"><option value="">اختر الصف...</option></select>
+            <select id="classSel"><option value="">كل الفصول</option></select>
+            <select id="typeSel">
+                <option value="عام">عام (للصف الأول)</option>
+                <option value="علمي">قسم علمي</option>
+                <option value="أدبي">قسم أدبي</option>
+            </select>
+            <select id="periodSel">
+                <option value="full">التقرير الشامل (المتوسط السنوي)</option>
+                <option value="p1">الفترة الأولى (1-7)</option>
+                <option value="p2">الفترة الثانية (8-14)</option>
+            </select>
+        </div>
+        <button class="btn-gold" onclick="generateAcademicReport()">توليد تقرير الكنترول المعتمد 🔍</button>
+        <button class="btn-gold" style="margin-top:10px; background:#065f46; color:white;" onclick="exportProExcel()">تصدير شيت Excel RTL 📥</button>
+    </div>
+
+    <div class="table-wrap">
+        <table id="controlTable">
+            <thead id="cHead"></thead>
+            <tbody id="cBody"></tbody>
+        </table>
+    </div>
+</div>
 
 <script>
     const firebaseConfig = { apiKey: "AIzaSyBePGZiqMPmZQdg36jZ4Rkdtd7OISxmob8", projectId: "rasd-tools" };
@@ -66,112 +69,111 @@
     const db = firebase.firestore();
 
     let sysConfig = {};
-    // ترتيب المواد المعتمد
-    const subjectsOrder = ["لغة عربية", "تربية دينية", "لغة إنجليزية", "رياضيات", "فيزياء", "كيمياء", "أحياء", "تاريخ", "جغرافيا", "فلسفة"];
+    
+    // تعريف هياكل المواد حسب طلبك
+    const structure = {
+        "1": ["اللغة العربية", "اللغة الإنجليزية", "الرياضيات", "التاريخ", "العلوم المتكاملة", "الفلسفة", "التربية الدينية", "اللغة الثانية (الفرنسية)", "المواطنة وحقوق الإنسان", "البرمجة والذكاء الاصطناعي"],
+        "2_علمي": ["اللغة العربية", "اللغة الإنجليزية", "الرياضيات", "التاريخ", "الفيزياء", "الكيمياء", "التربية الدينية", "اللغة الثانية (الفرنسية)", "المواطنة وحقوق الإنسان"],
+        "2_أدبي": ["اللغة العربية", "اللغة الإنجليزية", "الرياضيات", "التاريخ", "الجغرافيا", "علم النفس", "التربية الدينية", "اللغة الثانية (الفرنسية)", "المواطنة وحقوق الإنسان"]
+    };
 
     window.onload = async () => {
         const doc = await db.collection('system').doc('config').get();
         if(doc.exists) {
             sysConfig = doc.data();
-            sysConfig.grades.forEach(g => document.getElementById('repGrade').innerHTML += `<option value="${g.name}">${g.name}</option>`);
+            sysConfig.grades.forEach(g => document.getElementById('gradeSel').innerHTML += `<option value="${g.name}">${g.name}</option>`);
         }
     };
 
-    function updateFilters() {
-        const gName = document.getElementById('repGrade').value;
-        const cSel = document.getElementById('repClass');
+    function updateClassList() {
+        const gName = document.getElementById('gradeSel').value;
+        const cSel = document.getElementById('classSel');
         cSel.innerHTML = '<option value="">كل الفصول</option>';
         const grade = sysConfig.grades.find(g => g.name === gName);
         if(grade) grade.classes.forEach(c => cSel.innerHTML += `<option value="${c.name}">${c.name}</option>`);
     }
 
-    async function generateProReport() {
-        const grade = document.getElementById('repGrade').value;
-        const cls = document.getElementById('repClass').value;
-        const type = document.getElementById('repType').value;
-        const period = document.getElementById('repPeriod').value;
+    async function generateAcademicReport() {
+        const grade = document.getElementById('gradeSel').value;
+        const cls = document.getElementById('classSel').value;
+        const type = document.getElementById('typeSel').value;
+        const period = document.getElementById('periodSel').value;
 
         if(!grade) return alert("يرجى اختيار الصف");
 
-        // جلب الطلاب والدرجات
         const gNum = grade.match(/\d+/)[0];
+        const subKey = gNum === "1" ? "1" : `2_${type}`;
+        const activeSubs = structure[subKey];
+
         const sSnap = await db.collection('students').get();
         let students = sSnap.docs.map(d => ({id:d.id, ...d.data()}))
                             .filter(s => s.classCode.startsWith(gNum + '/'))
                             .sort((a,b) => a.sortOrder - b.sortOrder);
-        
         if(cls) students = students.filter(s => s.classCode === cls);
-        
-        const gSnap = await db.collection('grades').get();
-        const grades = gSnap.docs.map(d => d.data());
 
-        renderTable(students, grades, grade, type);
+        const gSnap = await db.collection('grades').get();
+        const allGrades = gSnap.docs.map(d => d.data());
+
+        renderTableUI(students, allGrades, activeSubs, period);
     }
 
-    function renderTable(students, grades, gradeName, filterType) {
-        const head = document.getElementById('mHead');
-        const body = document.getElementById('mBody');
+    function renderTableUI(students, grades, subjects, period) {
+        const head = document.getElementById('cHead');
+        const body = document.getElementById('cBody');
         
-        // تصفية المواد حسب الصف والتخصص
-        let activeSubjects = subjectsOrder.filter(s => {
-            if(gradeName.includes("1")) {
-                // مواد الصف الأول (مثال: بدون تخصص)
-                return !["فلسفة"].includes(s); 
-            } else {
-                // مواد الصف الثاني (علمي/أدبي)
-                if(filterType === "علمي") return !["تاريخ", "جغرافيا", "فلسفة"].includes(s);
-                if(filterType === "أدبي") return !["فيزياء", "كيمياء", "أحياء"].includes(s);
-            }
-            return true;
-        });
-
         let h1 = `<tr><th rowspan="2">م</th><th rowspan="2">الاسم</th><th rowspan="2">الفصل</th>`;
         let h2 = `<tr>`;
 
-        activeSubjects.forEach(sub => {
-            h1 += `<th colspan="6" style="background:#fdf2f2">${sub}</th>`;
-            h2 += `<th>م. ت</th><th>م. و</th><th>م. س</th><th>م. عام</th><th>اختبار</th><th>نهائي</th>`;
+        subjects.forEach(sub => {
+            h1 += `<th colspan="6" class="sub-header">${sub}</th>`;
+            h2 += `<th>م.ت</th><th>م.و</th><th>م.س</th><th>م.عام</th><th>اختبار</th><th>نهائي</th>`;
         });
         head.innerHTML = h1 + `</tr>` + h2 + `</tr>`;
 
         body.innerHTML = students.map(st => {
-            // التحقق من تخصص الطالب برمجياً من كود فصله (صياعة برمجية)
-            // إذا كان الفصل 2/1 أو 2/2 مثلاً (علمي) و 2/3 (أدبي)
-            let row = `<td>${st.sortOrder}</td><td style="text-align:right">${st.name}</td><td>${st.classCode}</td>`;
+            let row = `<td>${st.sortOrder}</td><td style="text-align:right; font-weight:bold;">${st.name}</td><td>${st.classCode}</td>`;
             
-            activeSubjects.forEach(sub => {
+            subjects.forEach(sub => {
                 let sGrades = grades.filter(g => g.sid === st.id && g.subject === sub);
                 let sumT=0, sumV=0, sumS=0, count=0;
                 
-                // حساب المتوسط لـ 14 أسبوع
-                for(let i=1; i<=14; i++){
+                // تحديد الأسابيع حسب الفترة
+                let weeks = (period==='p1') ? 7 : (period==='p2' ? 14 : 14);
+                let start = (period==='p2') ? 8 : 1;
+
+                for(let i=start; i<=weeks; i++){
                     let w = 'w'+i;
                     let wt = sGrades.find(g => g.week === w && g.type === 't')?.score || 0;
                     let wv = sGrades.find(g => g.week === w && g.type === 'v')?.score || 0;
                     let ws = sGrades.find(g => g.week === w && g.type === 's')?.score || 0;
-                    if(wt>0||wv>0) { sumT+=wt; sumV+=wv; sumS+=ws; count++; }
+                    if(wt>0 || wv>0) { sumT+=wt; sumV+=wv; sumS+=ws; count++; }
                 }
                 
                 let aT = count>0 ? (sumT/count).toFixed(1) : 0;
                 let aV = count>0 ? (sumV/count).toFixed(1) : 0;
                 let aS = count>0 ? (sumS/count).toFixed(1) : 0;
-                let exams = (sGrades.find(g => g.week === 'ex1')?.score || 0) + (sGrades.find(g => g.week === 'ex2')?.score || 0);
-                let mAvg = (parseFloat(aT)+parseFloat(aV)+parseFloat(aS)).toFixed(1);
                 
-                row += `<td>${aT}</td><td>${aV}</td><td>${aS}</td><td>${mAvg}</td><td>${exams}</td><td style="background:#fffbeb; font-weight:bold">${(parseFloat(mAvg)+exams).toFixed(1)}</td>`;
+                let examScore = 0;
+                if(period === 'p1') examScore = sGrades.find(g => g.week === 'ex1')?.score || 0;
+                else if(period === 'p2') examScore = sGrades.find(g => g.week === 'ex2')?.score || 0;
+                else examScore = (sGrades.find(g => g.week === 'ex1')?.score || 0) + (sGrades.find(g => g.week === 'ex2')?.score || 0);
+
+                let mAvg = (parseFloat(aT)+parseFloat(aV)+parseFloat(aS)).toFixed(1);
+                row += `<td>${aT}</td><td>${aV}</td><td>${aS}</td><td>${mAvg}</td><td>${examScore}</td><td class="total-cell">${(parseFloat(mAvg)+examScore).toFixed(1)}</td>`;
             });
             return `<tr>${row}</tr>`;
         }).join('');
     }
 
     function exportProExcel() {
-        const table = document.getElementById('masterControlTable');
+        const table = document.getElementById('controlTable');
         const wb = XLSX.utils.table_to_sheet(table);
         wb['!views'] = [{RTL: true}];
         const out = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(out, wb, "شيت الكنترول النهائي");
-        XLSX.writeFile(out, `Final_Control_Report_2026.xlsx`);
+        XLSX.utils.book_append_sheet(out, wb, "شيت الكنترول 2026");
+        XLSX.writeFile(out, `Academic_Report_${new Date().getTime()}.xlsx`);
     }
+
     function logout() { sessionStorage.clear(); window.location.href="index.html"; }
 </script>
 </body>
