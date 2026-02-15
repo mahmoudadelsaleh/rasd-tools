@@ -3,61 +3,156 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Management Center | Pro v2026</title>
+    <title>Management Center Pro | v2026</title>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        :root { --navy: #0a192f; --gold: #c5a059; --bg: #f8fafc; --white: #ffffff; }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; padding-bottom: 30px; }
-        .nav-header { background: var(--navy); color: white; padding: 15px; position: sticky; top: 0; z-index: 100; border-bottom: 3px solid var(--gold); display: flex; justify-content: space-between; align-items: center; }
-        .nav-links a { color: #cbd5e1; text-decoration: none; font-size: 13px; font-weight: bold; padding: 6px 10px; margin-left: 5px; }
-        .nav-links a.active { background: var(--gold); color: var(--navy); border-radius: 5px; }
-        .container { padding: 15px; max-width: 900px; margin: auto; }
-        .card { background: var(--white); border-radius: 12px; padding: 25px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border-right: 5px solid var(--gold); }
-        input, select { width: 100%; padding: 14px; border: 1px solid #e2e8f0; border-radius: 8px; margin-bottom: 12px; box-sizing: border-box; }
-        .btn-prime { width: 100%; padding: 16px; background: var(--navy); color: var(--gold); border: none; border-radius: 10px; font-weight: bold; cursor: pointer; }
-        .table-wrap { width: 100%; overflow-x: auto; background: white; border-radius: 10px; margin-top: 15px; }
+        :root { --navy: #0a192f; --gold: #c5a059; --bg: #f8fafc; --white: #ffffff; --emerald: #065f46; }
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--bg); margin: 0; padding-bottom: 50px; color: var(--navy); }
+        
+        /* الهيدر الفخم */
+        .academic-header {
+            background: var(--navy); color: white; padding: 15px 20px; 
+            position: sticky; top: 0; z-index: 1000; border-bottom: 3px solid var(--gold);
+            display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+        .nav-links { display: flex; gap: 10px; }
+        .nav-links a { 
+            color: #cbd5e1; text-decoration: none; font-size: 13px; font-weight: bold; 
+            padding: 8px 12px; border-radius: 6px; transition: 0.3s;
+        }
+        .nav-links a.active { background: var(--gold); color: var(--navy); }
+
+        .container { padding: 15px; max-width: 1000px; margin: auto; }
+
+        /* نظام التبويبات */
+        .tab-nav { display: flex; background: #e2e8f0; border-radius: 12px; margin-bottom: 25px; overflow: hidden; padding: 5px; }
+        .tab-btn { flex: 1; padding: 12px; border: none; cursor: pointer; font-weight: bold; color: #475569; background: none; transition: 0.3s; border-radius: 8px; }
+        .tab-btn.active { background: var(--white); color: var(--navy); box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
+
+        /* البطاقات */
+        .academic-card { 
+            background: var(--white); border-radius: 15px; padding: 25px; margin-bottom: 25px; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05); border-right: 6px solid var(--gold);
+            animation: slideUp 0.5s ease;
+        }
+        .card-title { font-size: 18px; font-weight: 800; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; color: var(--navy); }
+        .card-title i { color: var(--gold); }
+
+        input, select, textarea { 
+            width: 100%; padding: 14px; border: 1px solid #e2e8f0; border-radius: 10px; 
+            font-size: 15px; margin-bottom: 15px; box-sizing: border-box; background: #fcfcfc;
+        }
+        label { font-size: 13px; font-weight: bold; color: #64748b; margin-bottom: 8px; display: block; }
+
+        .btn-prime { 
+            width: 100%; padding: 16px; background: var(--navy); color: var(--gold); 
+            border: none; border-radius: 12px; font-weight: bold; font-size: 16px; cursor: pointer;
+            transition: 0.3s; display: flex; align-items: center; justify-content: center; gap: 10px;
+        }
+        .btn-prime:hover { background: #112240; transform: translateY(-2px); }
+
+        /* منطقة الإكسيل */
+        .excel-dropzone { 
+            border: 2px dashed var(--gold); background: #fdfbf7; padding: 40px 20px; 
+            text-align: center; border-radius: 15px; cursor: pointer; transition: 0.3s;
+        }
+        .excel-dropzone:hover { background: #f7f1e6; }
+
+        /* الجدول المطور */
+        .table-container { width: 100%; overflow-x: auto; background: white; border-radius: 12px; border: 1px solid #e2e8f0; }
         table { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 600px; }
-        th, td { border-bottom: 1px solid #f1f5f9; padding: 15px; text-align: center; }
-        .whatsapp-btn { color: #25d366; font-size: 18px; cursor: pointer; text-decoration: none; }
-        .edit-icon { color: var(--navy); cursor: pointer; margin-left: 10px; }
-        .panel { display: none; } .panel.active { display: block; animation: fadeIn 0.4s; }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        th, td { padding: 15px; text-align: center; border-bottom: 1px solid #f1f5f9; }
+        th { background: #f8fafc; color: #475569; font-weight: 800; }
+        
+        .wa-link { 
+            display: inline-flex; align-items: center; justify-content: center; 
+            width: 35px; height: 35px; background: #25d366; color: white; 
+            border-radius: 50%; text-decoration: none; font-size: 18px;
+        }
+        .action-btn { background: none; border: none; cursor: pointer; font-size: 16px; margin: 0 5px; }
+
+        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .panel { display: none; }
+        .panel.active { display: block; }
     </style>
 </head>
 <body>
 
-    <div class="nav-header">
+    <header class="academic-header">
         <div class="nav-links">
             <a href="school-setup.html">🏠 الإعدادات</a>
             <a href="manage-data.html" class="active">👥 الإدارة</a>
             <a href="results.html">📊 النتائج</a>
         </div>
-        <button onclick="logout()" style="background:transparent; color:var(--gold); border:1px solid var(--gold); padding:5px 10px; border-radius:8px;">خروج</button>
-    </div>
+        <div style="display:flex; align-items:center; gap:10px;">
+            <span id="userName" style="font-size:12px; font-weight:bold;"></span>
+            <button onclick="logout()" style="background:transparent; border:1px solid var(--gold); color:var(--gold); padding:5px 10px; border-radius:8px; cursor:pointer; font-size:12px;">خروج</button>
+        </div>
+    </header>
 
     <div class="container">
-        <div class="card">
-            <h3 id="fTitle">🏢 إدارة شؤون المعلمين</h3>
-            <input type="text" id="t_name" placeholder="اسم المعلم الرباعي">
-            <input type="text" id="t_user" placeholder="اسم المستخدم (Username)">
-            <input type="text" id="t_pass" placeholder="كلمة المرور">
-            <input type="text" id="t_phone" placeholder="رقم الموبايل (مثال: 01552402912)">
-            <input type="text" id="t_subs" placeholder="المواد الدراسية">
-            <div id="cls_checks" style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; padding:10px; background:#f8fafc;"></div>
-            <button class="btn-prime" style="margin-top:15px;" onclick="saveTeacher()">حفظ واعتماد البيانات 💾</button>
-            <button id="cancelEdit" style="display:none; width:100%; margin-top:5px; background:#64748b; color:white; border:none; padding:10px; border-radius:8px;" onclick="resetForm()">إلغاء التعديل</button>
+        <div class="academic-card" style="border-right-color: var(--emerald);">
+            <div class="card-title"><i class="fas fa-globe"></i> إعداد رابط المنصة الذكي</div>
+            <label>رابط الموقع الحالي (سيتم إرساله للمعلمين):</label>
+            <input type="text" id="platform_url" placeholder="https://your-site-link.web.app" oninput="saveUrlToStorage()">
+            <p style="font-size: 11px; color: #64748b;">* يمكنك تغيير هذا الرابط عند الانتقال لمدرسة أخرى أو تغيير الاستضافة.</p>
         </div>
 
-        <div class="card" style="padding:10px;">
-            <h3>📋 سجل هيئة التدريس</h3>
-            <div class="table-wrap">
-                <table id="tTable">
-                    <thead><tr><th>المعلم</th><th>بيانات الدخول</th><th>تواصل</th><th>إجراء</th></tr></thead>
-                    <tbody></tbody>
-                </table>
+        <div class="tab-nav">
+            <button class="tab-btn active" onclick="showPanel(event, 'teachers_panel')">👨‍🏫 هيئة التدريس</button>
+            <button class="tab-btn" onclick="showPanel(event, 'students_panel')">🎓 شؤون الطلاب</button>
+        </div>
+
+        <div id="teachers_panel" class="panel active">
+            <div class="academic-card">
+                <div class="card-title"><i class="fas fa-user-plus"></i> <span id="form_mode">إضافة معلم جديد</span></div>
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+                    <input type="text" id="t_name" placeholder="الاسم الرباعي">
+                    <input type="text" id="t_user" placeholder="اسم المستخدم">
+                    <input type="password" id="t_pass" placeholder="كلمة المرور">
+                    <input type="tel" id="t_phone" placeholder="رقم الموبايل (واتساب)">
+                </div>
+                <input type="text" id="t_subjects" placeholder="المواد (رياضيات, دين...)">
+                <label>الفصول المسندة للمعلم:</label>
+                <div id="classes_selector" style="display:grid; grid-template-columns: 1fr 1fr; gap:8px; background:#f8fafc; padding:15px; border-radius:12px; border:1px solid #e2e8f0; max-height:150px; overflow-y:auto;"></div>
+                
+                <button class="btn-prime" style="margin-top:20px;" onclick="saveTeacher()">اعتماد وحفظ البيانات 💾</button>
+                <button id="cancel_edit" style="display:none; width:100%; margin-top:8px; background:#64748b; color:white; border:none; padding:12px; border-radius:10px;" onclick="resetTeacherForm()">إلغاء التعديل</button>
+            </div>
+
+            <div class="academic-card" style="padding:15px;">
+                <div class="card-title"><i class="fas fa-users-cog"></i> سجل المعلمين والنشاط</div>
+                <div class="table-container">
+                    <table id="teachers_table">
+                        <thead><tr><th>المعلم</th><th>الدخول</th><th>تواصل</th><th>إجراء</th></tr></thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div id="students_panel" class="panel">
+            <div class="academic-card">
+                <div class="card-title"><i class="fas fa-file-excel"></i> استيراد قاعدة بيانات الطلاب</div>
+                <div class="excel-dropzone" onclick="document.getElementById('excel_input').click()">
+                    <i class="fas fa-cloud-upload-alt" style="font-size:40px; color:var(--gold); margin-bottom:15px;"></i>
+                    <p style="font-weight:800;">اضغط هنا لرفع ملف الإكسيل</p>
+                    <p style="font-size:12px; color:#64748b;">يجب أن يحتوي الملف على: [مسلسل] [اسم] [صف] [فصل]</p>
+                    <input type="file" id="excel_input" hidden accept=".xlsx, .xls" onchange="handleStudentExcel(event)">
+                </div>
+                
+                <div id="preview_section" style="display:none; margin-top:25px;">
+                    <button class="btn-prime" style="background:var(--emerald); color:white;" onclick="uploadStudentsToDb()">تأكيد ورفع الطلاب لفايربيز 🚀</button>
+                    <div class="table-container" style="margin-top:20px;">
+                        <table id="preview_table">
+                            <thead><tr><th>م</th><th>الاسم</th><th>كود الفصل</th></tr></thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -66,89 +161,144 @@
     const firebaseConfig = { apiKey: "AIzaSyBePGZiqMPmZQdg36jZ4Rkdtd7OISxmob8", projectId: "rasd-tools" };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
-    
-    // ضع هنا رابط موقعك المخصص سواء كان على Firebase أو Domain خاص
-    const PLATFORM_URL = window.location.origin; 
+
+    let schoolConfig = {}, studentData = [];
 
     window.onload = async () => {
-        const conf = await db.collection('system').doc('config').get();
-        if(conf.exists) {
-            const cont = document.getElementById('cls_checks');
-            conf.data().grades.forEach(g => g.classes.forEach(c => {
-                cont.innerHTML += `<label style="font-size:12px;"><input type="checkbox" name="t_cls" value="${g.name} - ${c.name}"> ${g.name} - ${c.name}</label>`;
-            }));
+        const user = sessionStorage.getItem('userName');
+        if(!user) window.location.href="index.html";
+        document.getElementById('userName').innerText = user;
+        
+        // استعادة الرابط المحفوظ
+        const savedUrl = localStorage.getItem('customPlatformUrl');
+        if(savedUrl) document.getElementById('platform_url').value = savedUrl;
+
+        const doc = await db.collection('system').doc('config').get();
+        if(doc.exists) {
+            schoolConfig = doc.data();
+            renderClassesCheckboxes();
         }
-        renderTeachers();
+        renderTeachersList();
     };
 
-    async function saveTeacher() {
-        const user = document.getElementById('t_user').value.trim();
-        const name = document.getElementById('t_name').value.trim();
-        const pass = document.getElementById('t_pass').value.trim();
-        const phone = document.getElementById('t_phone').value.trim();
-        const subs = document.getElementById('t_subs').value.split(',');
-        const clss = Array.from(document.querySelectorAll('input[name="t_cls"]:checked')).map(c => c.value);
-
-        if(!user || !name) return alert("الاسم والمستخدم حقول إجبارية");
-
-        await db.collection('teachers').doc(user).set({
-            name, pass, phone, subjects: subs, classes: clss, updatedAt: Date.now()
-        }, {merge:true});
-        
-        alert("✅ تم تحديث بيانات المعلم");
-        resetForm(); renderTeachers();
+    function showPanel(e, id) {
+        document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
+        e.currentTarget.classList.add('active');
     }
 
-    async function renderTeachers() {
+    function renderClassesCheckboxes() {
+        const cont = document.getElementById('classes_selector');
+        cont.innerHTML = '';
+        schoolConfig.grades.forEach(g => {
+            g.classes.forEach(c => {
+                const label = `${g.name} - ${c.name}`;
+                cont.innerHTML += `<label style="display:flex; align-items:center; gap:8px;"><input type="checkbox" name="t_cls" value="${label}"> ${label}</label>`;
+            });
+        });
+    }
+
+    async function saveTeacher() {
+        const u = document.getElementById('t_user').value.trim();
+        const n = document.getElementById('t_name').value.trim();
+        const p = document.getElementById('t_pass').value.trim();
+        const ph = document.getElementById('t_phone').value.trim();
+        const sub = document.getElementById('t_subjects').value.split(',');
+        const cls = Array.from(document.querySelectorAll('input[name="t_cls"]:checked')).map(i => i.value);
+
+        if(!u || !n) return alert("يرجى إكمال البيانات الأساسية");
+
+        await db.collection('teachers').doc(u).set({
+            name: n, pass: p, phone: ph, subjects: sub, classes: cls, updatedAt: Date.now()
+        }, {merge:true});
+        
+        alert("✅ تمت العملية بنجاح");
+        resetTeacherForm(); renderTeachersList();
+    }
+
+    async function renderTeachersList() {
         const snap = await db.collection('teachers').get();
-        const tbody = document.querySelector('#tTable tbody');
+        const tbody = document.querySelector('#teachers_table tbody');
+        const customUrl = document.getElementById('platform_url').value || window.location.origin;
         tbody.innerHTML = '';
+
         snap.forEach(doc => {
             const t = doc.data();
-            // تجهيز نص رسالة الواتساب
-            const msg = window.encodeURIComponent(`أهلاً بك يا ${t.name} في منصة الرصد الذكي v2026 🏛️\n\nبيانات دخولك هي:\nاسم المستخدم: ${doc.id}\nكلمة المرور: ${t.pass}\n\nرابط المنصة:\n${PLATFORM_URL}\n\nبالتوفيق في رصدك!`);
-            const waLink = t.phone ? `https://wa.me/2${t.phone}?text=${msg}` : '#';
+            const msg = window.encodeURIComponent(`تحية طيبة يا ${t.name}.. بيانات دخولك لمنصة الرصد v2026 هي:\nالمستخدم: ${doc.id}\nكلمة المرور: ${t.pass}\nالرابط:\n${customUrl}`);
+            const wa = t.phone ? `https://wa.me/2${t.phone}?text=${msg}` : '#';
 
             tbody.innerHTML += `
                 <tr>
                     <td><b>${t.name}</b></td>
                     <td>U: ${doc.id}<br>P: ${t.pass}</td>
+                    <td><a href="${wa}" target="_blank" class="wa-link"><i class="fab fa-whatsapp"></i></a></td>
                     <td>
-                        <a href="${waLink}" target="_blank" class="whatsapp-btn"><i class="fab fa-whatsapp"></i></a>
-                    </td>
-                    <td>
-                        <i class="fas fa-edit edit-icon" onclick="editT('${doc.id}')"></i>
-                        <i class="fas fa-trash" style="color:red; cursor:pointer;" onclick="delT('${doc.id}')"></i>
+                        <button class="action-btn" onclick="editTeacher('${doc.id}')"><i class="fas fa-edit"></i></button>
+                        <button class="action-btn" style="color:red;" onclick="deleteTeacher('${doc.id}')"><i class="fas fa-trash"></i></button>
                     </td>
                 </tr>`;
         });
     }
 
-    async function editT(id) {
+    async function editTeacher(id) {
         const doc = await db.collection('teachers').doc(id).get();
         const t = doc.data();
         document.getElementById('t_user').value = id; document.getElementById('t_user').disabled = true;
         document.getElementById('t_name').value = t.name;
         document.getElementById('t_pass').value = t.pass;
         document.getElementById('t_phone').value = t.phone || '';
-        document.getElementById('t_subs').value = t.subjects.join(',');
+        document.getElementById('t_subjects').value = t.subjects.join(',');
         document.querySelectorAll('input[name="t_cls"]').forEach(cb => cb.checked = t.classes.includes(cb.value));
-        document.getElementById('fTitle').innerText = "✏️ تعديل بيانات المعلم";
-        document.getElementById('cancelEdit').style.display = 'block';
-        window.scrollTo(0,0);
+        document.getElementById('form_mode').innerText = "تعديل بيانات المعلم";
+        document.getElementById('cancel_edit').style.display = 'block';
+        window.scrollTo({top: 0, behavior: 'smooth'});
     }
 
-    function resetForm() {
+    function resetTeacherForm() {
         document.getElementById('t_user').value = ''; document.getElementById('t_user').disabled = false;
         document.getElementById('t_name').value = ''; document.getElementById('t_pass').value = '';
-        document.getElementById('t_phone').value = ''; document.getElementById('t_subs').value = '';
+        document.getElementById('t_phone').value = ''; document.getElementById('t_subjects').value = '';
         document.querySelectorAll('input[name="t_cls"]').forEach(cb => cb.checked = false);
-        document.getElementById('fTitle').innerText = "إضافة معلم جديد";
-        document.getElementById('cancelEdit').style.display = 'none';
+        document.getElementById('form_mode').innerText = "إضافة معلم جديد";
+        document.getElementById('cancel_edit').style.display = 'none';
     }
 
-    async function delT(id) { if(confirm("حذف نهائي؟")) { await db.collection('teachers').doc(id).delete(); renderTeachers(); } }
-    function logout() { sessionStorage.clear(); window.location.href="index.html"; }
+    function handleStudentExcel(e) {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            const data = new Uint8Array(event.target.result);
+            const wb = XLSX.read(data, {type: 'array'});
+            const json = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], {header: 1});
+            studentData = json.slice(1).map(r => ({
+                sortOrder: parseInt(r[0]), name: r[1], classCode: `${parseInt(r[2])}/${parseInt(r[3])}`
+            })).filter(r => r.name);
+            document.getElementById('preview_section').style.display = 'block';
+            const tbody = document.querySelector('#preview_table tbody');
+            tbody.innerHTML = studentData.map(r => `<tr><td>${r.sortOrder}</td><td style="text-align:right">${r.name}</td><td>${r.classCode}</td></tr>`).join('');
+        };
+        reader.readAsArrayBuffer(e.target.files[0]);
+    }
+
+    async function uploadStudentsToDb() {
+        if(!confirm("سيتم استبدال قاعدة بيانات الطلاب الحالية، هل أنت متأكد؟")) return;
+        const old = await db.collection('students').get();
+        let batch = db.batch(); old.forEach(d => batch.delete(d.ref)); await batch.commit();
+        batch = db.batch(); let count = 0;
+        for (let s of studentData) {
+            batch.set(db.collection('students').doc(), s);
+            count++; if(count === 400) { await batch.commit(); batch = db.batch(); count = 0; }
+        }
+        await batch.commit(); alert("✅ تمت عملية الرفع بنجاح!"); location.reload();
+    }
+
+    function saveUrlToStorage() {
+        localStorage.setItem('customPlatformUrl', document.getElementById('platform_url').value);
+        renderTeachersList(); // تحديث الروابط فوراً
+    }
+
+    async function deleteTeacher(id) { if(confirm("حذف المعلم نهائياً؟")) { await db.collection('teachers').doc(id).delete(); renderTeachersList(); } }
+    function logout() { if(confirm("هل تود الخروج؟")) { sessionStorage.clear(); window.location.href="index.html"; } }
 </script>
 </body>
 </html>
