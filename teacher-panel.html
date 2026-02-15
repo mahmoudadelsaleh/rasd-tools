@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>لوحة رصد المعلم v2026 - مشروع الخدمة</title>
+    <title>لوحة رصد المعلم v2026 - التحديث الرقمي</title>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
     <style>
@@ -13,31 +13,21 @@
         .container { padding: 12px; max-width: 600px; margin: auto; }
         .card { background: white; border-radius: 12px; padding: 12px; margin-bottom: 10px; border: 1px solid #e2e8f0; transition: 0.3s; }
         .active-row { border: 2px solid var(--primary); background: #eff6ff; transform: scale(1.02); }
-        
-        /* لوحة المفاتيح الذكية */
-        .smart-keyboard { position: fixed; bottom: 20px; left: 10px; right: 10px; background: #e2e8f0; padding: 10px; display: none; gap: 6px; z-index: 2000; border-radius: 15px; box-shadow: 0 -5px 15px rgba(0,0,0,0.2); border: 2px solid #94a3b8; }
-        .key-btn { background: white; border-radius: 8px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 16px; border: 1px solid #94a3b8; height: 45px; transition: 0.1s; user-select: none; }
-        .key-btn:active { background: var(--primary); color: white; transform: scale(0.95); }
-        .key-all { background: #8b5cf6; color: white; font-size: 12px; }
-        .key-done { background: var(--success); color: white; font-size: 14px; }
-        .kb-max-30 { grid-template-columns: repeat(8, 1fr); }
-        .kb-max-15 { grid-template-columns: repeat(5, 1fr); }
-
+        .smart-keyboard { position: fixed; bottom: 20px; left: 10px; right: 10px; background: #e2e8f0; padding: 10px; display: none; grid-template-columns: repeat(5, 1fr); gap: 6px; z-index: 2000; border-radius: 15px; box-shadow: 0 -5px 15px rgba(0,0,0,0.2); border: 2px solid #94a3b8; }
+        .key-btn { background: white; border-radius: 8px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 16px; border: 1px solid #94a3b8; height: 45px; }
         .score-sel { width: 45px; height: 40px; font-weight: bold; text-align: center; border-radius: 8px; border: 1px solid #cbd5e1; background: #fff; font-size: 16px; cursor: pointer; }
-        .score-sel.active-input { border: 3px solid var(--primary); background: #fff; box-shadow: 0 0 10px rgba(59,130,246,0.3); }
+        .score-sel.active-input { border: 3px solid var(--primary); }
         .score-sel.saved { border-color: var(--success); background: #f0fdf4; color: #15803d; }
-        .score-sel.locked-item { background: #f1f5f9; cursor: not-allowed; opacity: 0.5; border-style: dashed; }
-        
         .student-name { font-size: 13px; font-weight: 600; color: #334155; }
-        .sync-status { position: fixed; bottom: 5px; right: 10px; font-size: 10px; color: #64748b; background: rgba(255,255,255,0.8); padding: 2px 5px; border-radius: 4px; }
-        select { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #cbd5e1; font-weight: bold; margin-bottom: 10px; background: white; }
+        .sync-status { position: fixed; bottom: 5px; right: 10px; font-size: 10px; color: #64748b; }
+        select { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #cbd5e1; font-weight: bold; margin-bottom: 10px; }
     </style>
 </head>
 <body>
 
 <header>
-    <div>👨‍🏫 <b id="tName">جاري التعرف...</b></div>
-    <button id="closeBtn" onclick="closePad()" style="display:none; background:var(--danger); color:white; border:none; padding:6px 15px; border-radius:8px; font-weight:bold;">إغلاق اللوحة</button>
+    <div>👨‍🏫 <b id="tName">جاري التحميل...</b></div>
+    <button id="closeBtn" onclick="closePad()" style="display:none; background:var(--danger); color:white; border:none; padding:6px 15px; border-radius:8px; font-weight:bold;">إغلاق</button>
 </header>
 
 <div class="container">
@@ -53,92 +43,63 @@
 <div class="sync-status" id="syncStat">جاري الاتصال...</div>
 
 <script>
-    const firebaseConfig = {
-        apiKey: "AIzaSyBePGZiqMPmZQdg36jZ4Rkdtd7OISxmob8",
-        authDomain: "rasd-tools.firebaseapp.com",
-        projectId: "rasd-tools"
-    };
+    const firebaseConfig = { apiKey: "AIzaSyBePGZiqMPmZQdg36jZ4Rkdtd7OISxmob8", projectId: "rasd-tools" };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
-    // تفعيل العمل أوفلاين
-    db.enablePersistence().catch(err => console.log("Persistence failed"));
-
-    const tId = sessionStorage.getItem('userEmail'); // سيتم جلبه من صفحة الدخول
+    const tId = sessionStorage.getItem('userEmail');
     let currentStudents = [], activeInput = null, sysConfig = {}, teacherInfo = {};
 
     window.onload = async () => {
         if(!tId) return location.href="index.html";
-        
-        try {
-            // جلب إعدادات الماستر والأقفال
-            const confDoc = await db.collection('system').doc('config').get();
-            sysConfig = confDoc.exists ? confDoc.data() : {};
+        const confDoc = await db.collection('system').doc('config').get();
+        sysConfig = confDoc.exists ? confDoc.data() : {};
 
-            // جلب بيانات المعلم وفصوله
-            const tDoc = await db.collection('teachers').doc(tId).get();
-            if(tDoc.exists) {
-                teacherInfo = tDoc.data();
-                document.getElementById('tName').innerText = teacherInfo.name;
-                
-                // تعبئة المواد والفصول المسندة للمعلم فقط
-                const subSel = document.getElementById('vSubject');
-                teacherInfo.subjects.forEach(s => subSel.innerHTML += `<option value="${s}">${s}</option>`);
-                
-                const clsSel = document.getElementById('vClass');
-                teacherInfo.classes.forEach(c => clsSel.innerHTML += `<option value="${c}">${c}</option>`);
-            }
+        const tDoc = await db.collection('teachers').doc(tId).get();
+        if(tDoc.exists) {
+            teacherInfo = tDoc.data();
+            document.getElementById('tName').innerText = teacherInfo.name;
+            teacherInfo.subjects.forEach(s => document.getElementById('vSubject').innerHTML += `<option value="${s}">${s}</option>`);
+            
+            // هنا نربط فصول المعلم المختارة من الماستر
+            teacherInfo.classes.forEach((c, index) => {
+                // c هنا تكون مثل "الصف 1 - 1"
+                document.getElementById('vClass').innerHTML += `<option value="${index}">${c}</option>`;
+            });
+        }
 
-            // تعبئة الأسابيع والاختبارات بناءً على الأقفال المفتوحة فقط
-            const weekSel = document.getElementById('vWeek');
-            if(sysConfig.openWeeks) {
-                sysConfig.openWeeks.forEach(w => {
-                    const num = w.substring(1);
-                    weekSel.innerHTML += `<option value="${w}">الأسبوع ${num}</option>`;
-                });
-            }
-            if(sysConfig.openExams) {
-                sysConfig.openExams.forEach(ex => {
-                    const num = ex.substring(2);
-                    weekSel.innerHTML += `<option value="${ex}">📝 اختبار الشهر ${num}</option>`;
-                });
-            }
-
-            document.getElementById('syncStat').innerText = "✅ متصل";
-        } catch (e) { document.getElementById('syncStat').innerText = "📡 وضع الأوفلاين"; }
+        const weekSel = document.getElementById('vWeek');
+        if(sysConfig.openWeeks) sysConfig.openWeeks.forEach(w => weekSel.innerHTML += `<option value="${w}">أسبوع ${w.substring(1)}</option>`);
+        if(sysConfig.openExams) sysConfig.openExams.forEach(ex => weekSel.innerHTML += `<option value="${ex}">اختبار شهر ${ex.substring(2)}</option>`);
     };
 
     async function loadStudentsData() {
         const sub = document.getElementById('vSubject').value;
-        const cls = document.getElementById('vClass').value;
+        const clsIndex = document.getElementById('vClass').value;
         const week = document.getElementById('vWeek').value;
-        if(!sub || !cls || !week) return;
+        if(!sub || clsIndex === "" || !week) return;
 
-        document.getElementById('studentList').innerHTML = '<p style="text-align:center">جاري جلب قائمة الكنترول...</p>';
+        document.getElementById('studentList').innerHTML = '<p style="text-align:center">جاري جلب القائمة...</p>';
 
-        // جلب الطلاب المربوطين بهذا الفصل بالترتيب الكنترولي
-        const [gradeName, className] = cls.split(' - ');
+        // تحويل الفصول إلى أرقام للبحث في الإكسيل المرفوع
+        // مدرسة الماستر تعتمد: الصف الأول = 1، الفصل الأول = 1
+        const fullClassName = teacherInfo.classes[clsIndex]; 
+        // استخراج الأرقام من النص مثل "الصف 1 - 3" -> 1 و 3
+        const numbers = fullClassName.match(/\d+/g);
+        const gNum = parseInt(numbers[0]);
+        const cNum = parseInt(numbers[1]);
+
         const sSnap = await db.collection('students')
-                              .where('grade', '==', gradeName)
-                              .where('class', '==', className)
+                              .where('gradeNum', '==', gNum)
+                              .where('classNum', '==', cNum)
                               .get();
         
         currentStudents = sSnap.docs.map(doc => ({id: doc.id, ...doc.data()}))
                                     .sort((a,b) => a.sortOrder - b.sortOrder);
 
-        // جلب الدرجات المرصودة مسبقاً لهذا المعلم والمادة والأسبوع
-        const gSnap = await db.collection('grades')
-                              .where('teacher', '==', tId)
-                              .where('week', '==', week)
-                              .where('subject', '==', sub)
-                              .get();
-        
+        const gSnap = await db.collection('grades').where('teacher', '==', tId).where('week', '==', week).where('subject', '==', sub).get();
         const scores = {};
-        gSnap.forEach(d => {
-            const data = d.data();
-            if(!scores[data.sid]) scores[data.sid] = {};
-            scores[data.sid][data.type] = data.score;
-        });
+        gSnap.forEach(d => { const data = d.data(); if(!scores[data.sid]) scores[data.sid] = {}; scores[data.sid][data.type] = data.score; });
 
         renderList(scores, week);
     }
@@ -151,7 +112,6 @@
                 <div style="display:flex; justify-content:space-between; align-items:center;">
                     <span class="student-name">${s.sortOrder}. ${s.name}</span>
                     <div style="display:flex; gap:5px;">`;
-
             if(week.startsWith('ex')) {
                 html += drawInp(s.id, 'exam', sysConfig.maxExam, sc.exam, 'اختبار');
             } else {
@@ -161,102 +121,75 @@
             }
             html += `</div></div></div>`;
         });
-        document.getElementById('studentList').innerHTML = html || '<p style="text-align:center">لا يوجد طلاب في هذا الفصل</p>';
+        document.getElementById('studentList').innerHTML = html || '<p style="text-align:center">لا يوجد طلاب مطابقين</p>';
     }
 
     function drawInp(sid, type, max, cur, label) {
-        return `<div style="text-align:center">
-                    <small style="font-size:8px; display:block; color:#64748b">${label}</small>
-                    <input type="text" readonly class="score-sel ${cur!==undefined?'saved':''}" 
-                    id="inp_${sid}_${type}" value="${cur!==undefined?cur:''}" 
-                    onclick="openPad('${sid}','${type}',${max})">
-                </div>`;
+        return `<div style="text-align:center"><small style="font-size:8px; display:block;">${label}</small>
+        <input type="text" readonly class="score-sel ${cur!==undefined?'saved':''}" id="inp_${sid}_${type}" value="${cur!==undefined?cur:''}" onclick="openPad('${sid}','${type}',${max})"></div>`;
     }
 
     function openPad(sid, type, max) {
         activeInput = {sid, type, max};
         document.querySelectorAll('.card').forEach(c => c.classList.remove('active-row'));
         document.getElementById(`row_${sid}`).classList.add('active-row');
-        document.querySelectorAll('.score-sel').forEach(i => i.classList.remove('active-input'));
-        document.getElementById(`inp_${sid}_${type}`).classList.add('active-input');
-
         document.getElementById('setupArea').style.visibility = 'hidden';
         document.getElementById('closeBtn').style.display = 'block';
-
         const pad = document.getElementById('numPad');
         pad.style.display = 'grid';
-        pad.className = `smart-keyboard ${max > 15 ? 'kb-max-30' : 'kb-max-15'}`;
-
         let keys = '';
         for(let i=1; i<=max; i++) keys += `<div class="key-btn" onclick="inputValue(${i})">${i}</div>`;
-        keys += `<div class="key-btn" style="background:#f1f5f9" onclick="inputValue(0)">0</div>`;
-        keys += `<div class="key-btn key-all" onclick="fillAllColumn()">الكل</div>`;
-        keys += `<div class="key-btn key-done" style="grid-column: span 2" onclick="closePad()">تم ✅</div>`;
+        keys += `<div class="key-btn" style="background:#f1f5f9" onclick="inputValue(0)">0</div>
+                 <div class="key-btn" style="background:#8b5cf6; color:white; font-size:12px" onclick="fillAllColumn()">الكل</div>
+                 <div class="key-btn" style="background:var(--success); color:white; grid-column:span 2" onclick="closePad()">تم</div>`;
         pad.innerHTML = keys;
-
-        const row = document.getElementById(`row_${sid}`);
-        window.scrollTo({ top: row.offsetTop - 80, behavior: 'smooth' });
+        window.scrollTo({ top: document.getElementById(`row_${sid}`).offsetTop - 80, behavior: 'smooth' });
     }
 
     function inputValue(val) {
         if(!activeInput) return;
         const {sid, type} = activeInput;
         const inp = document.getElementById(`inp_${sid}_${type}`);
-        inp.value = val; 
-        inp.classList.add('saved');
-
+        inp.value = val; inp.classList.add('saved');
         saveToFirebase(sid, type, val);
         autoNext();
     }
 
-    function fillAllColumn() {
-        if(!activeInput) return;
-        const val = document.getElementById(`inp_${activeInput.sid}_${activeInput.type}`).value;
-        if(val === "") return;
-        currentStudents.forEach(s => {
-            const target = document.getElementById(`inp_${s.id}_${activeInput.type}`);
-            if(target) {
-                target.value = val;
-                target.classList.add('saved');
-                saveToFirebase(s.id, activeInput.type, val);
-            }
-        });
+    async function saveToFirebase(sid, type, score) {
+        const sub = document.getElementById('vSubject').value;
+        const week = document.getElementById('vWeek').value;
+        await db.collection('grades').doc(`${sid}_${week}_${type}_${sub}`).set({
+            sid, week, type, subject: sub, score: parseInt(score), teacher: tId, timestamp: Date.now()
+        }, {merge:true});
+        document.getElementById('syncStat').innerText = "✅ تم الحفظ";
     }
 
     function autoNext() {
         const week = document.getElementById('vWeek').value;
         const types = week.startsWith('ex') ? ['exam'] : ['t','v','s'];
         let nIdx = types.indexOf(activeInput.type) + 1;
-
         if(nIdx < types.length) {
-            openPad(activeInput.sid, types[nIdx], sysConfig[`max${types[nIdx].toUpperCase()}`] || 15);
+            openPad(activeInput.sid, types[nIdx], sysConfig[`max${types[nIdx].toUpperCase()}`]);
         } else {
             const curIdx = currentStudents.findIndex(s => s.id === activeInput.sid);
-            if(curIdx < currentStudents.length - 1) {
-                openPad(currentStudents[curIdx+1].id, types[0], sysConfig[`max${types[0].toUpperCase()}`] || 15);
-            } else { closePad(); }
+            if(curIdx < currentStudents.length - 1) openPad(currentStudents[curIdx+1].id, types[0], sysConfig[`max${types[0].toUpperCase()}`]);
+            else closePad();
         }
-    }
-
-    async function saveToFirebase(sid, type, score) {
-        const sub = document.getElementById('vSubject').value;
-        const week = document.getElementById('vWeek').value;
-        const docId = `${sid}_${week}_${type}_${sub}_${tId}`;
-        
-        try {
-            await db.collection('grades').doc(docId).set({
-                sid, week, type, subject: sub, score: parseInt(score), teacher: tId, timestamp: Date.now()
-            }, {merge:true});
-            document.getElementById('syncStat').innerText = "✅ تم الحفظ";
-        } catch (e) { document.getElementById('syncStat').innerText = "⏳ بانتظار الإنترنت..."; }
     }
 
     function closePad() {
         document.getElementById('numPad').style.display = 'none';
         document.getElementById('setupArea').style.visibility = 'visible';
         document.getElementById('closeBtn').style.display = 'none';
-        document.querySelectorAll('.card').forEach(c => c.classList.remove('active-row'));
-        document.querySelectorAll('.score-sel').forEach(i => i.classList.remove('active-input'));
+    }
+
+    function fillAllColumn() {
+        const val = document.getElementById(`inp_${activeInput.sid}_${activeInput.type}`).value;
+        if(!val) return;
+        currentStudents.forEach(s => {
+            const target = document.getElementById(`inp_${s.id}_${activeInput.type}`);
+            if(target) { target.value = val; target.classList.add('saved'); saveToFirebase(s.id, activeInput.type, val); }
+        });
     }
 </script>
 </body>
