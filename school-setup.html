@@ -3,137 +3,91 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>إعدادات الماستر v2026 - الإصدار الشامل</title>
+    <title>الإعدادات - الماستر</title>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
-        :root { --primary: #1e293b; --accent: #3b82f6; --success: #10b981; --bg: #f1f5f9; --danger: #ef4444; }
-        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--bg); margin: 0; padding-bottom: 80px; }
-        header { background: var(--primary); color: white; padding: 15px; text-align: center; position: sticky; top: 0; z-index: 1000; box-shadow: 0 2px 10px rgba(0,0,0,0.2); }
+        :root { --primary: #0f172a; --accent: #3b82f6; --bg: #f1f5f9; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; padding-bottom: 50px; }
+        .top-bar { background: var(--primary); color: white; padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; }
+        .nav-links a { color: #cbd5e1; text-decoration: none; margin-left: 15px; font-weight: bold; }
+        .nav-links a.active { color: white; border-bottom: 2px solid var(--accent); }
         .container { max-width: 900px; margin: 20px auto; padding: 0 15px; }
-        
-        .setup-tabs { display: flex; background: white; border-radius: 12px; margin-bottom: 20px; overflow: hidden; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-        .tab-link { flex: 1; padding: 15px; cursor: pointer; border: none; background: none; font-weight: bold; color: #64748b; border-bottom: 3px solid transparent; transition: 0.3s; }
-        .tab-link.active { color: var(--accent); border-bottom-color: var(--accent); background: #f0f7ff; }
-
-        .setup-panel { display: none; background: white; padding: 25px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); }
-        .setup-panel.active { display: block; animation: fadeIn 0.4s; }
-
-        .section-title { border-right: 5px solid var(--accent); padding-right: 15px; margin-bottom: 20px; color: var(--primary); font-size: 1.2rem; }
-        .form-group { margin-bottom: 20px; }
-        label { display: block; font-weight: bold; margin-bottom: 8px; color: #334155; }
-        input, textarea, select { width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 10px; background: #f8fafc; font-size: 14px; box-sizing: border-box; }
-        
-        .excel-upload-box { border: 2px dashed var(--accent); padding: 30px; text-align: center; border-radius: 15px; background: #f0f7ff; cursor: pointer; margin-bottom: 20px; }
-        
-        .lock-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px; margin-top: 15px; }
-        .lock-item { background: white; border: 1px solid #e2e8f0; padding: 10px; border-radius: 10px; display: flex; align-items: center; gap: 8px; font-size: 13px; cursor: pointer; }
-        
-        .btn-save { background: var(--success); color: white; border: none; padding: 18px; border-radius: 12px; width: 100%; font-size: 18px; font-weight: bold; cursor: pointer; margin-top: 20px; transition: 0.2s; }
-        .btn-save:hover { transform: translateY(-2px); filter: brightness(1.1); }
-
-        .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: var(--primary); padding: 10px; display: flex; justify-content: center; box-shadow: 0 -2px 10px rgba(0,0,0,0.3); z-index: 2000; }
-        .nav-next { background: var(--accent); color: white; padding: 10px 25px; border-radius: 30px; text-decoration: none; font-weight: bold; }
-
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .card { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 20px; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; }
+        input, select, textarea { width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; margin-top: 5px; box-sizing: border-box; }
+        .btn-save { width: 100%; padding: 15px; background: #10b981; color: white; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; margin-top: 20px; }
+        .lock-box { background: #f8fafc; padding: 10px; border: 1px solid #e2e8f0; border-radius: 8px; display: flex; align-items: center; gap: 8px; }
     </style>
 </head>
 <body>
-
-<header>
-    <h2>🛡️ لوحة الماستر v2026 - الضبط الكنترولي الشامل</h2>
-    <div id="connStatus" style="font-size: 11px; opacity: 0.8;">⏳ جاري التحقق...</div>
-</header>
-
-<div class="container">
-    <div class="setup-tabs">
-        <button class="tab-link active" onclick="openTab(event, 'auto_setup')">🏗️ الهيكل الآلي</button>
-        <button class="tab-link" onclick="openTab(event, 'basic_info')">🏫 بيانات المدرسة</button>
-        <button class="tab-link" onclick="openTab(event, 'grading_rules')">📊 حدود الدرجات</button>
-        <button class="tab-link" onclick="openTab(event, 'locks_control')">🔐 الأقفال والنتائج</button>
+    <div class="top-bar">
+        <div class="nav-links">
+            <a href="school-setup.html" class="active">🏠 الإعدادات</a>
+            <a href="manage-data.html">👥 الإدارة</a>
+            <a href="results.html">📊 النتائج</a>
+        </div>
+        <div><span id="uName"></span> <button onclick="logout()" style="background:red; color:white; border:none; padding:5px 10px; border-radius:5px; cursor:pointer;">خروج</button></div>
     </div>
 
-    <div id="auto_setup" class="setup-panel active">
-        <h3 class="section-title">بناء النظام من شيت الطلاب</h3>
-        <div class="excel-upload-box" onclick="document.getElementById('master_excel').click()">
-            <p id="file_msg">📁 ارفع شيت الطلاب لاستخراج الصفوف والفصول تلقائياً</p>
-            <input type="file" id="master_excel" hidden accept=".xlsx, .xls" onchange="analyzeStructure(event)">
+    <div class="container">
+        <div class="card">
+            <h3>🏗️ استخراج الهيكل من الإكسيل</h3>
+            <input type="file" id="master_excel" accept=".xlsx, .xls" onchange="analyzeStructure(event)">
+            <div id="analysis_res" style="margin-top:15px; color: #1e40af; font-weight: bold;"></div>
         </div>
-        <div id="analysis_view" style="display:none; background: #f8fafc; padding: 15px; border-radius: 12px; border: 1px solid #e2e8f0;">
-            <h4 style="margin:0 0 10px 0;">الهيكل المستخرج:</h4>
-            <div id="grades_summary"></div>
-        </div>
-    </div>
 
-    <div id="basic_info" class="setup-panel">
-        <h3 class="section-title">الترويسة الرسمية</h3>
-        <div class="form-group"><label>اسم المدرسة:</label><input type="text" id="sch_name"></div>
-        <div class="form-group"><label>كلمة مدير المدرسة:</label><textarea id="sch_principal" rows="2"></textarea></div>
-        <div class="form-group"><label>كلمة رئيس الكنترول:</label><textarea id="sch_control" rows="2"></textarea></div>
-    </div>
-
-    <div id="grading_rules" class="setup-panel">
-        <h3 class="section-title">الحدود القصوى للدرجات (تنبيه المعلم)</h3>
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
-            <div class="form-group"><label>إجمالي الأسابيع:</label><input type="number" id="weeks_count" value="14" onchange="generateLocksUI()"></div>
-            <div class="form-group"><label>عدد الاختبارات:</label><input type="number" id="exams_count" value="2" onchange="generateLocksUI()"></div>
+        <div class="card">
+            <h3>🏫 بيانات المدرسة</h3>
+            <input type="text" id="sch_name" placeholder="اسم المدرسة">
+            <textarea id="sch_control" placeholder="رسالة الكنترول للطلاب"></textarea>
         </div>
-        
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px;">
-            <div class="form-group"><label>التقييم (ت) - أقصى درجة:</label><input type="number" id="max_t" value="15"></div>
-            <div class="form-group"><label>الواجب (و) - أقصى درجة:</label><input type="number" id="max_v" value="15"></div>
-            <div class="form-group"><label>السلوك (س) - أقصى درجة:</label><input type="number" id="max_s" value="10"></div>
-            <div class="form-group"><label>الاختبار - أقصى درجة:</label><input type="number" id="max_exam" value="30"></div>
-        </div>
-    </div>
 
-    <div id="locks_control" class="setup-panel">
-        <h3 class="section-title">التحكم في العرض والخصوصية</h3>
-        <div class="form-group">
-            <label>عرض النتائج للطلاب:</label>
+        <div class="card">
+            <h3>📊 حدود الدرجات النهائية</h3>
+            <div class="grid">
+                <div>ت (أقصى درجة): <input type="number" id="max_t" value="15"></div>
+                <div>و (أقصى درجة): <input type="number" id="max_v" value="15"></div>
+                <div>س (أقصى درجة): <input type="number" id="max_s" value="10"></div>
+                <div>اختبار (أقصى درجة): <input type="number" id="max_exam" value="30"></div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>🔐 الأقفال والنتائج</h3>
             <select id="show_results_toggle">
-                <option value="false">🔒 حجب النتائج (قيد المراجعة)</option>
-                <option value="true">🔓 إتاحة النتائج (استعلام الطالب متاح)</option>
+                <option value="false">🔒 حجب النتائج عن الطلاب</option>
+                <option value="true">🔓 إتاحة النتائج للاستعلام</option>
             </select>
+            <h4 style="margin-top:20px;">الأسابيع المفتوحة للرصد:</h4>
+            <div id="weeks_grid" class="grid"></div>
         </div>
 
-        <h3 class="section-title">أقفال الرصد (للمعلمين)</h3>
-        <label>الأسابيع المفتوحة للرصد:</label>
-        <div id="locks_weeks" class="lock-grid"></div>
-        <label style="margin-top:20px; display:block;">اختبارات الشهور المفتوحة:</label>
-        <div id="locks_exams" class="lock-grid"></div>
+        <button class="btn-save" onclick="saveConfig()">حفظ كافة الإعدادات والاعتماد 💾</button>
     </div>
-
-    <button class="btn-save" onclick="saveAllSettings()">حفظ وإرسال الإعدادات لفايربيز 💾</button>
-</div>
-
-<div class="bottom-nav">
-    <a href="manage-data.html" class="nav-next">إدارة المعلمين والطلاب ⬅️</a>
-</div>
 
 <script>
     const firebaseConfig = { apiKey: "AIzaSyBePGZiqMPmZQdg36jZ4Rkdtd7OISxmob8", projectId: "rasd-tools" };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
-
     let detectedStructure = [], currentConfig = {};
 
     window.onload = async () => {
+        document.getElementById('uName').innerText = sessionStorage.getItem('userName');
         const doc = await db.collection('system').doc('config').get();
         if(doc.exists) {
             currentConfig = doc.data();
-            loadInputs();
-            generateLocksUI();
+            document.getElementById('sch_name').value = currentConfig.schoolName || '';
+            document.getElementById('sch_control').value = currentConfig.controlWord || '';
+            document.getElementById('max_t').value = currentConfig.maxT || 15;
+            document.getElementById('max_v').value = currentConfig.maxV || 15;
+            document.getElementById('max_s').value = currentConfig.maxS || 10;
+            document.getElementById('max_exam').value = currentConfig.maxExam || 30;
+            document.getElementById('show_results_toggle').value = currentConfig.showResults ? "true" : "false";
+            renderLocks();
         }
     };
-
-    function openTab(evt, tabId) {
-        document.querySelectorAll('.setup-panel').forEach(p => p.classList.remove('active'));
-        document.querySelectorAll('.tab-link').forEach(l => l.classList.remove('active'));
-        document.getElementById(tabId).classList.add('active');
-        evt.currentTarget.classList.add('active');
-    }
 
     function analyzeStructure(e) {
         const reader = new FileReader();
@@ -141,81 +95,46 @@
             const data = new Uint8Array(event.target.result);
             const wb = XLSX.read(data, {type: 'array'});
             const json = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], {header: 1});
-            const rows = json.slice(1);
-            const structureMap = {};
-
-            rows.forEach(r => {
+            const map = {};
+            json.slice(1).forEach(r => {
                 if(r[2] && r[3]) {
                     const g = `الصف ${r[2]}`;
-                    const c = `${r[2]}/${r[3]}`;
-                    if(!structureMap[g]) structureMap[g] = new Set();
-                    structureMap[g].add(c);
+                    if(!map[g]) map[g] = new Set();
+                    map[g].add(`${r[2]}/${r[3]}`);
                 }
             });
-
-            detectedStructure = Object.keys(structureMap).map(g => ({
-                name: g,
-                classes: Array.from(structureMap[g]).sort().map(c => ({ name: c }))
-            }));
-
-            const container = document.getElementById('grades_summary');
-            container.innerHTML = detectedStructure.map(g => `<div><b>${g.name}:</b> ${g.classes.map(c=>c.name).join(' - ')}</div>`).join('');
-            document.getElementById('analysis_view').style.display = 'block';
-            document.getElementById('file_msg').innerText = "✅ تم استخراج الهيكل بنجاح";
+            detectedStructure = Object.keys(map).map(g => ({ name: g, classes: Array.from(map[g]).map(c => ({name: c})) }));
+            document.getElementById('analysis_res').innerText = "✅ تم استخراج الهيكل بنجاح";
         };
         reader.readAsArrayBuffer(e.target.files[0]);
     }
 
-    function generateLocksUI() {
-        const wCount = document.getElementById('weeks_count').value;
-        const eCount = document.getElementById('exams_count').value;
-        const wCont = document.getElementById('locks_weeks');
-        const eCont = document.getElementById('locks_exams');
-        wCont.innerHTML = ''; eCont.innerHTML = '';
-        for(let i=1; i<=wCount; i++) {
+    function renderLocks() {
+        const cont = document.getElementById('weeks_grid');
+        cont.innerHTML = '';
+        for(let i=1; i<=14; i++) {
             const checked = (currentConfig.openWeeks && currentConfig.openWeeks.includes(`w${i}`)) ? 'checked' : '';
-            wCont.innerHTML += `<label class="lock-item"><input type="checkbox" value="w${i}" ${checked}> أسبوع ${i}</label>`;
-        }
-        for(let i=1; i<=eCount; i++) {
-            const checked = (currentConfig.openExams && currentConfig.openExams.includes(`ex${i}`)) ? 'checked' : '';
-            eCont.innerHTML += `<label class="lock-item"><input type="checkbox" value="ex${i}" ${checked}> شهر ${i}</label>`;
+            cont.innerHTML += `<div class="lock-box"><input type="checkbox" value="w${i}" ${checked}> أسبوع ${i}</div>`;
         }
     }
 
-    async function saveAllSettings() {
+    async function saveConfig() {
         const config = {
             schoolName: document.getElementById('sch_name').value,
-            principalWord: document.getElementById('sch_principal').value,
             controlWord: document.getElementById('sch_control').value,
-            weeksCount: parseInt(document.getElementById('weeks_count').value),
-            examsCount: parseInt(document.getElementById('exams_count').value),
             maxT: parseInt(document.getElementById('max_t').value),
             maxV: parseInt(document.getElementById('max_v').value),
             maxS: parseInt(document.getElementById('max_s').value),
             maxExam: parseInt(document.getElementById('max_exam').value),
             showResults: document.getElementById('show_results_toggle').value === "true",
-            openWeeks: Array.from(document.querySelectorAll('#locks_weeks input:checked')).map(i => i.value),
-            openExams: Array.from(document.querySelectorAll('#locks_exams input:checked')).map(i => i.value),
-            grades: detectedStructure.length > 0 ? detectedStructure : (currentConfig.grades || []),
-            updatedAt: Date.now()
+            openWeeks: Array.from(document.querySelectorAll('#weeks_grid input:checked')).map(i => i.value),
+            grades: detectedStructure.length > 0 ? detectedStructure : currentConfig.grades
         };
-        await db.collection('system').doc('config').set(config, {merge: true});
-        alert("✅ تم الحفظ والاعتماد");
-        location.reload();
+        await db.collection('system').doc('config').set(config, {merge:true});
+        alert("✅ تم الحفظ!"); location.reload();
     }
 
-    function loadInputs() {
-        document.getElementById('sch_name').value = currentConfig.schoolName || '';
-        document.getElementById('sch_principal').value = currentConfig.principalWord || '';
-        document.getElementById('sch_control').value = currentConfig.controlWord || '';
-        document.getElementById('weeks_count').value = currentConfig.weeksCount || 14;
-        document.getElementById('exams_count').value = currentConfig.examsCount || 2;
-        document.getElementById('max_t').value = currentConfig.maxT || 15;
-        document.getElementById('max_v').value = currentConfig.maxV || 15;
-        document.getElementById('max_s').value = currentConfig.maxS || 10;
-        document.getElementById('max_exam').value = currentConfig.maxExam || 30;
-        document.getElementById('show_results_toggle').value = currentConfig.showResults ? "true" : "false";
-    }
+    function logout() { if(confirm("خروج؟")) { sessionStorage.clear(); window.location.href="index.html"; } }
 </script>
 </body>
 </html>
