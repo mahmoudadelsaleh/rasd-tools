@@ -3,109 +3,129 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>إعدادات النظام - مشروع الخدمة</title>
+    <title>إعدادات النظام - مشروع الخدمة 2026</title>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
     <style>
-        :root { --primary: #1e293b; --accent: #3b82f6; --bg: #f1f5f9; }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; }
-        header { background: var(--primary); color: white; padding: 15px; text-align: center; position: sticky; top: 0; z-index: 100; }
-        .container { max-width: 800px; margin: 20px auto; padding: 10px; }
+        :root { --primary: #1e293b; --accent: #3b82f6; --danger: #ef4444; --success: #10b981; --bg: #f1f5f9; }
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--bg); margin: 0; padding-bottom: 50px; }
+        header { background: var(--primary); color: white; padding: 15px; text-align: center; position: sticky; top: 0; z-index: 1000; box-shadow: 0 2px 10px rgba(0,0,0,0.2); }
+        .container { max-width: 900px; margin: 20px auto; padding: 0 15px; }
         
-        /* نظام التبويبات */
-        .setup-tabs { display: flex; overflow-x: auto; background: white; border-bottom: 2px solid #e2e8f0; margin-bottom: 20px; }
-        .tab-link { padding: 15px 20px; cursor: pointer; border: none; background: none; font-weight: bold; white-space: nowrap; color: #64748b; }
-        .tab-link.active { color: var(--accent); border-bottom: 3px solid var(--accent); }
+        /* التبويبات */
+        .setup-tabs { display: flex; background: white; border-radius: 12px; margin-bottom: 20px; overflow: hidden; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .tab-link { flex: 1; padding: 15px; cursor: pointer; border: none; background: none; font-weight: bold; color: #64748b; transition: 0.3s; border-bottom: 3px solid transparent; }
+        .tab-link.active { color: var(--accent); border-bottom-color: var(--accent); background: #f0f7ff; }
 
-        .setup-panel { display: none; background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
-        .setup-panel.active { display: block; }
+        .setup-panel { display: none; background: white; padding: 25px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); }
+        .setup-panel.active { display: block; animation: fadeIn 0.4s; }
 
+        .section-title { border-right: 5px solid var(--accent); padding-right: 15px; margin: 30px 0 20px; color: var(--primary); font-size: 1.2rem; }
         .form-group { margin-bottom: 20px; }
         label { display: block; font-weight: bold; margin-bottom: 8px; color: #334155; }
-        input, textarea, select { width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px; box-sizing: border-box; }
+        input, textarea, select { width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 10px; background: #f8fafc; font-size: 14px; box-sizing: border-box; }
         
-        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
-        .btn-save { background: var(--accent); color: white; border: none; padding: 15px; border-radius: 8px; width: 100%; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 20px; }
+        /* تصميم كروت الصفوف والفصول */
+        .grade-card { background: #f8fafc; border: 1px solid #e2e8f0; padding: 15px; border-radius: 12px; margin-bottom: 15px; }
+        .class-row { display: grid; grid-template-columns: 2fr 1fr 40px; gap: 10px; margin-top: 10px; align-items: center; }
         
-        .section-title { border-right: 4px solid var(--accent); padding-right: 10px; margin: 25px 0 15px; color: var(--primary); }
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .btn-add { background: var(--primary); color: white; border: none; padding: 8px 15px; border-radius: 8px; cursor: pointer; font-size: 12px; margin-top: 10px; }
+        .btn-save { background: var(--success); color: white; border: none; padding: 18px; border-radius: 12px; width: 100%; font-size: 18px; font-weight: bold; cursor: pointer; margin-top: 30px; transition: 0.2s; }
+        .btn-save:hover { filter: brightness(1.1); transform: translateY(-2px); }
+        .btn-del { color: var(--danger); cursor: pointer; font-size: 1.2rem; text-align: center; }
+
+        /* الأقفال */
+        .lock-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px; margin-top: 15px; }
+        .lock-item { background: white; border: 1px solid #e2e8f0; padding: 10px; border-radius: 10px; display: flex; align-items: center; gap: 8px; font-size: 13px; }
+        .lock-item input { width: auto; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @media (max-width: 600px) { .grid-2 { grid-template-columns: 1fr; } .setup-tabs { flex-wrap: wrap; } }
     </style>
 </head>
 <body>
 
 <header>
-    <h2>⚙️ لوحة تحكم الماستر - إعدادات المشروع</h2>
+    <h2>🛡️ لوحة الماستر v2026 - نظام الخدمة</h2>
+    <div id="connectionStatus" style="font-size: 12px; opacity: 0.8;">⏳ جاري فحص الاتصال بـ Firebase...</div>
 </header>
 
 <div class="container">
     <div class="setup-tabs">
-        <button class="tab-link active" onclick="showTab(event, 'basic')">🏫 بيانات المدرسة</button>
-        <button class="tab-link" onclick="showTab(event, 'structure')">🏗️ الهيكل الإداري</button>
-        <button class="tab-link" onclick="showTab(event, 'grading')">📊 نظام الرصد</button>
-        <button class="tab-link" onclick="showTab(event, 'control')">🔒 الأقفال</button>
+        <button class="tab-link active" onclick="openTab(event, 'basic')">🏫 تعريف المدرسة</button>
+        <button class="tab-link" onclick="openTab(event, 'structure')">🏗️ الهيكل والفصول</button>
+        <button class="tab-link" onclick="openTab(event, 'grading')">📊 معايير الرصد</button>
+        <button class="tab-link" onclick="openTab(event, 'control')">🔐 الأقفال</button>
     </div>
 
     <div id="basic" class="setup-panel active">
-        <h3 class="section-title">البيانات التعريفية</h3>
+        <h3 class="section-title">البيانات الرسمية للمدرسة</h3>
         <div class="form-group">
-            <label>اسم المدرسة كاملاً:</label>
-            <input type="text" id="schoolName" placeholder="مثال: مدرسة المحمودية الثانوية بنين">
+            <label>اسم المدرسة:</label>
+            <input type="text" id="sch_name" placeholder="ادخل الاسم بالكامل">
         </div>
         <div class="form-group">
             <label>كلمة مدير المدرسة:</label>
-            <textarea id="principalWord" rows="3"></textarea>
+            <textarea id="sch_principal" rows="3" placeholder="تظهر في واجهة التقارير..."></textarea>
         </div>
         <div class="form-group">
-            <label>كلمة رئيس الكنترول والقائم بالرصد:</label>
-            <textarea id="controlWord" rows="3"></textarea>
+            <label>كلمة رئيس الكنترول:</label>
+            <textarea id="sch_control" rows="3" placeholder="تظهر في ذيل الكشوف..."></textarea>
         </div>
-        <button class="btn-save" onclick="saveBasicInfo()">حفظ البيانات الأساسية</button>
+        <button class="btn-save" onclick="saveData('schoolInfo')">حفظ بيانات التعريف 💾</button>
     </div>
 
     <div id="structure" class="setup-panel">
-        <h3 class="section-title">تنظيم الصفوف والفصول</h3>
+        <h3 class="section-title">تنظيم الصفوف والفصول الدراسية</h3>
         <div class="form-group">
-            <label>عدد الصفوف الدراسية:</label>
-            <input type="number" id="gradesCount" value="3">
+            <label>عدد الصفوف بالمدرسة:</label>
+            <input type="number" id="grades_count" value="3" onchange="generateGradesUI()">
         </div>
-        <div id="gradesDetails">
+        <div id="grades_container">
             </div>
-        <button class="btn-save" onclick="saveStructure()">حفظ هيكل المدرسة</button>
+        <button class="btn-save" onclick="saveData('structure')">اعتماد هيكل الفصول 🏗️</button>
     </div>
 
     <div id="grading" class="setup-panel">
-        <h3 class="section-title">تخطيط التقييم الأسبوعي</h3>
+        <h3 class="section-title">تخطيط زمن الدراسة والتقييم</h3>
         <div class="grid-2">
             <div class="form-group">
-                <label>عدد أسابيع الفصل:</label>
-                <input type="number" id="weeksCount" value="14">
+                <label>إجمالي أسابيع الرصد:</label>
+                <input type="number" id="weeks_count" value="14" onchange="generateLocksUI()">
             </div>
             <div class="form-group">
                 <label>عدد الاختبارات الشهرية:</label>
-                <input type="number" id="examsCount" value="2">
+                <input type="number" id="exams_count" value="2">
             </div>
         </div>
 
-        <h3 class="section-title">حدود درجات الرصد (العظمى)</h3>
+        <h3 class="section-title">توزيع الدرجات العظمى</h3>
         <div class="grid-2">
-            <div class="form-group"><label>التقييم (ت):</label><input type="number" id="maxT" value="15"></div>
-            <div class="form-group"><label>الواجب (و):</label><input type="number" id="maxV" value="15"></div>
-            <div class="form-group"><label>السلوك (س):</label><input type="number" id="maxS" value="10"></div>
-            <div class="form-group"><label>الاختبار (اخ):</label><input type="number" id="maxExam" value="30"></div>
+            <div class="form-group"><label>التقييم الأسبوعي (ت):</label><input type="number" id="max_t" value="15"></div>
+            <div class="form-group"><label>الواجب (و):</label><input type="number" id="max_v" value="15"></div>
+            <div class="form-group"><label>السلوك (س):</label><input type="number" id="max_s" value="10"></div>
+            <div class="form-group"><label>الاختبار الشهري (اخ):</label><input type="number" id="max_exam" value="30"></div>
         </div>
-        <button class="btn-save" onclick="saveGradingSystem()">حفظ نظام الرصد</button>
+        <button class="btn-save" onclick="saveData('grading')">حفظ معايير الرصد 📊</button>
     </div>
 
     <div id="control" class="setup-panel">
-        <h3 class="section-title">إتاحة وإغلاق الرصد</h3>
-        <p>تحكم في الفترات التي يُسمح للمعلمين بالرصد فيها:</p>
-        <div id="locksContainer" class="grid-2">
-            </div>
-        <button class="btn-save" onclick="saveLocks()">تحديث حالة الأقفال</button>
+        <h3 class="section-title">التحكم في إتاحة الرصد للمعلمين</h3>
+        <p style="font-size: 13px; color: #64748b;">* الأسابيع المحددة هي فقط التي تظهر للمعلم في لوحة رصده.</p>
+        
+        <h4>🔓 الأسابيع المفتوحة</h4>
+        <div id="locks_weeks" class="lock-grid"></div>
+
+        <h4 style="margin-top:20px;">🔓 الاختبارات المفتوحة</h4>
+        <div id="locks_exams" class="lock-grid"></div>
+
+        <button class="btn-save" onclick="saveData('locks')">تحديث حالة الأقفال 🔐</button>
     </div>
 </div>
 
 <script>
-    // إعدادات فايربيز (استخدام نفس إعداداتك السابقة)
+    // تكوين Firebase (بياناتك الأصلية المعتمدة)
     const firebaseConfig = {
         apiKey: "AIzaSyBePGZiqMPmZQdg36jZ4Rkdtd7OISxmob8",
         authDomain: "rasd-tools.firebaseapp.com",
@@ -114,25 +134,148 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
-    function showTab(evt, tabId) {
+    let schoolData = { grades: [] };
+
+    async function init() {
+        try {
+            const doc = await db.collection('system').doc('config').get();
+            if(doc.exists) {
+                schoolData = doc.data();
+                loadInputs();
+            }
+            document.getElementById('connectionStatus').innerText = "✅ متصل بـ Firebase";
+            generateGradesUI();
+            generateLocksUI();
+        } catch(e) {
+            document.getElementById('connectionStatus').innerText = "❌ فشل الاتصال";
+        }
+    }
+
+    function openTab(evt, tabId) {
         document.querySelectorAll('.setup-panel').forEach(p => p.classList.remove('active'));
         document.querySelectorAll('.tab-link').forEach(l => l.classList.remove('active'));
         document.getElementById(tabId).classList.add('active');
         evt.currentTarget.classList.add('active');
     }
 
-    // وظائف الحفظ (سنكمل منطق الربط مع فايربيز في الخطوة القادمة)
-    async function saveBasicInfo() {
-        const data = {
-            name: document.getElementById('schoolName').value,
-            principalWord: document.getElementById('principalWord').value,
-            controlWord: document.getElementById('controlWord').value
-        };
-        await db.collection('system').doc('schoolInfo').set(data);
-        alert("✅ تم حفظ بيانات المدرسة");
+    // --- نظام الفصول الديناميكي ---
+    function generateGradesUI() {
+        const count = document.getElementById('grades_count').value;
+        const container = document.getElementById('grades_container');
+        container.innerHTML = '';
+
+        for(let i=1; i<=count; i++) {
+            const gradeData = schoolData.grades[i-1] || { name: `الصف ${i}`, classes: [] };
+            let html = `
+                <div class="grade-card" id="grade-${i}">
+                    <input type="text" value="${gradeData.name}" id="grade-name-${i}" style="font-weight:bold; border:none; background:none; font-size:1.1rem;">
+                    <div id="classes-area-${i}">`;
+            
+            gradeData.classes.forEach((cls, cIdx) => {
+                html += createClassRow(i, cIdx, cls.name, cls.students);
+            });
+
+            html += `</div>
+                    <button class="btn-add" onclick="addClassRow(${i})">+ إضافة فصل</button>
+                </div>`;
+            container.innerHTML += html;
+        }
     }
 
-    // منطق توليد الفصول والأقفال سيتم إضافته ليعمل ديناميكياً
+    function createClassRow(gIdx, cIdx, name='', count=0) {
+        return `
+            <div class="class-row" id="row-${gIdx}-${cIdx}">
+                <input type="text" placeholder="اسم الفصل (مثلاً 1/1)" value="${name}">
+                <input type="number" placeholder="عدد الطلاب" value="${count}">
+                <span class="btn-del" onclick="this.parentElement.remove()">×</span>
+            </div>`;
+    }
+
+    function addClassRow(gIdx) {
+        const area = document.getElementById(`classes-area-${gIdx}`);
+        const cIdx = area.children.length;
+        area.insertAdjacentHTML('beforeend', createClassRow(gIdx, cIdx));
+    }
+
+    // --- نظام الأقفال الديناميكي ---
+    function generateLocksUI() {
+        const wCount = document.getElementById('weeks_count').value;
+        const eCount = document.getElementById('exams_count').value;
+        const wContainer = document.getElementById('locks_weeks');
+        const eContainer = document.getElementById('locks_exams');
+        
+        wContainer.innerHTML = '';
+        eContainer.innerHTML = '';
+
+        for(let i=1; i<=wCount; i++) {
+            const checked = (schoolData.openWeeks && schoolData.openWeeks.includes(`w${i}`)) ? 'checked' : '';
+            wContainer.innerHTML += `<label class="lock-item"><input type="checkbox" value="w${i}" ${checked}> أسبوع ${i}</label>`;
+        }
+        for(let i=1; i<=eCount; i++) {
+            const checked = (schoolData.openExams && schoolData.openExams.includes(`ex${i}`)) ? 'checked' : '';
+            eContainer.innerHTML += `<label class="lock-item"><input type="checkbox" value="ex${i}" ${checked} style="accent-color:red"> اختبار ${i}</label>`;
+        }
+    }
+
+    // --- الحفظ الشامل ---
+    async function saveData(type) {
+        document.getElementById('connectionStatus').innerText = "⏳ جاري الحفظ...";
+        
+        // تجميع البيانات الحالية من الواجهة
+        const config = {
+            schoolName: document.getElementById('sch_name').value,
+            principalWord: document.getElementById('sch_principal').value,
+            controlWord: document.getElementById('sch_control').value,
+            weeksCount: parseInt(document.getElementById('weeks_count').value),
+            examsCount: parseInt(document.getElementById('exams_count').value),
+            maxT: parseInt(document.getElementById('max_t').value),
+            maxV: parseInt(document.getElementById('max_v').value),
+            maxS: parseInt(document.getElementById('max_s').value),
+            maxExam: parseInt(document.getElementById('max_exam').value),
+            openWeeks: Array.from(document.querySelectorAll('#locks_weeks input:checked')).map(i => i.value),
+            openExams: Array.from(document.querySelectorAll('#locks_exams input:checked')).map(i => i.value),
+            grades: []
+        };
+
+        // تجميع بيانات الصفوف والفصول
+        const gCount = document.getElementById('grades_count').value;
+        for(let i=1; i<=gCount; i++) {
+            const grade = {
+                name: document.getElementById(`grade-name-${i}`).value,
+                classes: []
+            };
+            const rows = document.querySelectorAll(`#classes-area-${i} .class-row`);
+            rows.forEach(row => {
+                const inputs = row.querySelectorAll('input');
+                grade.classes.push({ name: inputs[0].value, students: parseInt(inputs[1].value) });
+            });
+            config.grades.push(grade);
+        }
+
+        try {
+            await db.collection('system').doc('config').set(config, {merge: true});
+            schoolData = config;
+            alert("✅ تم الحفظ والاعتماد بنجاح في نظام الماستر");
+            document.getElementById('connectionStatus').innerText = "✅ تم تحديث البيانات";
+        } catch(e) {
+            alert("❌ خطأ في الحفظ");
+        }
+    }
+
+    function loadInputs() {
+        if(!schoolData) return;
+        document.getElementById('sch_name').value = schoolData.schoolName || '';
+        document.getElementById('sch_principal').value = schoolData.principalWord || '';
+        document.getElementById('sch_control').value = schoolData.controlWord || '';
+        document.getElementById('weeks_count').value = schoolData.weeksCount || 14;
+        document.getElementById('exams_count').value = schoolData.examsCount || 2;
+        document.getElementById('max_t').value = schoolData.maxT || 15;
+        document.getElementById('max_v').value = schoolData.maxV || 15;
+        document.getElementById('max_s').value = schoolData.maxS || 10;
+        document.getElementById('max_exam').value = schoolData.maxExam || 30;
+    }
+
+    window.onload = init;
 </script>
 </body>
 </html>
