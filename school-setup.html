@@ -3,238 +3,150 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>إعدادات النظام - مشروع الخدمة 2026</title>
+    <title>إعدادات النظام الذكي - الماستر v2026</title>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
-        :root { --primary: #1e293b; --accent: #3b82f6; --danger: #ef4444; --success: #10b981; --bg: #f1f5f9; }
+        :root { --primary: #1e293b; --accent: #3b82f6; --success: #10b981; --bg: #f1f5f9; }
         body { font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--bg); margin: 0; padding-bottom: 80px; }
-        header { background: var(--primary); color: white; padding: 15px; text-align: center; position: sticky; top: 0; z-index: 1000; box-shadow: 0 2px 10px rgba(0,0,0,0.2); }
+        header { background: var(--primary); color: white; padding: 15px; text-align: center; position: sticky; top: 0; z-index: 1000; }
         .container { max-width: 900px; margin: 20px auto; padding: 0 15px; }
-        
-        .setup-tabs { display: flex; background: white; border-radius: 12px; margin-bottom: 20px; overflow: hidden; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-        .tab-link { flex: 1; padding: 15px; cursor: pointer; border: none; background: none; font-weight: bold; color: #64748b; transition: 0.3s; border-bottom: 3px solid transparent; }
-        .tab-link.active { color: var(--accent); border-bottom-color: var(--accent); background: #f0f7ff; }
-
-        .setup-panel { display: none; background: white; padding: 25px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); }
-        .setup-panel.active { display: block; animation: fadeIn 0.4s; }
-
-        .section-title { border-right: 5px solid var(--accent); padding-right: 15px; margin: 30px 0 20px; color: var(--primary); font-size: 1.2rem; }
+        .setup-panel { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); margin-bottom: 20px; }
+        .section-title { border-right: 5px solid var(--accent); padding-right: 15px; margin-bottom: 20px; color: var(--primary); font-size: 1.2rem; }
         .form-group { margin-bottom: 20px; }
-        label { display: block; font-weight: bold; margin-bottom: 8px; color: #334155; }
-        input, textarea, select { width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 10px; background: #f8fafc; font-size: 14px; box-sizing: border-box; }
-        
-        .grade-card { background: #f8fafc; border: 1px solid #e2e8f0; padding: 15px; border-radius: 12px; margin-bottom: 15px; }
-        .class-row { display: grid; grid-template-columns: 2fr 1fr 40px; gap: 10px; margin-top: 10px; align-items: center; }
-        
-        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-        .btn-add { background: var(--primary); color: white; border: none; padding: 8px 15px; border-radius: 8px; cursor: pointer; font-size: 12px; margin-top: 10px; }
-        .btn-save { background: var(--success); color: white; border: none; padding: 18px; border-radius: 12px; width: 100%; font-size: 18px; font-weight: bold; cursor: pointer; margin-top: 30px; transition: 0.2s; }
-        .btn-save:hover { filter: brightness(1.1); transform: translateY(-2px); }
-        .btn-del { color: var(--danger); cursor: pointer; font-size: 1.2rem; text-align: center; }
-
-        .lock-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px; margin-top: 15px; }
-        .lock-item { background: white; border: 1px solid #e2e8f0; padding: 10px; border-radius: 10px; display: flex; align-items: center; gap: 8px; font-size: 13px; }
-        
-        /* شريط التنقل السفلي الجديد */
-        .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: var(--primary); padding: 10px; display: flex; justify-content: center; gap: 20px; box-shadow: 0 -2px 10px rgba(0,0,0,0.3); z-index: 2000; }
-        .nav-next { background: var(--accent); color: white; padding: 10px 25px; border-radius: 30px; text-decoration: none; font-weight: bold; font-size: 14px; display: flex; align-items: center; gap: 8px; }
-
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        label { display: block; font-weight: bold; margin-bottom: 8px; }
+        input, textarea, select { width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 10px; background: #f8fafc; box-sizing: border-box; }
+        .excel-upload-box { border: 2px dashed var(--accent); padding: 30px; text-align: center; border-radius: 15px; background: #f0f7ff; cursor: pointer; margin-bottom: 20px; }
+        .btn-save { background: var(--success); color: white; border: none; padding: 18px; border-radius: 12px; width: 100%; font-size: 18px; font-weight: bold; cursor: pointer; }
+        .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: var(--primary); padding: 10px; display: flex; justify-content: center; z-index: 2000; }
+        .nav-link { background: var(--accent); color: white; padding: 10px 25px; border-radius: 30px; text-decoration: none; font-weight: bold; }
+        .grade-tag { display: inline-block; background: #e2e8f0; padding: 5px 12px; border-radius: 20px; margin: 5px; font-size: 12px; }
     </style>
 </head>
 <body>
 
 <header>
-    <h2>🛡️ لوحة الماستر v2026 - إعداد الهيكل</h2>
-    <div id="connectionStatus" style="font-size: 11px; opacity: 0.8;">⏳ جاري التحميل...</div>
+    <h2>🛡️ إعداد الماستر من ملف الطلاب</h2>
 </header>
 
 <div class="container">
-    <div class="setup-tabs">
-        <button class="tab-link active" onclick="openTab(event, 'basic')">🏫 تعريف المدرسة</button>
-        <button class="tab-link" onclick="openTab(event, 'structure')">🏗️ الهيكل والفصول</button>
-        <button class="tab-link" onclick="openTab(event, 'grading')">📊 معايير الرصد</button>
-        <button class="tab-link" onclick="openTab(event, 'control')">🔐 الأقفال</button>
+    <div class="setup-panel">
+        <h3 class="section-title">1. استخراج هيكل المدرسة من الإكسيل</h3>
+        <p style="font-size: 13px; color: #64748b;">ارفع ملف الطلاب، وسيقوم النظام بتحديد الصفوف والفصول تلقائياً بناءً على البيانات.</p>
+        <div class="excel-upload-box" onclick="document.getElementById('setup_excel').click()">
+            <p id="file_info">📁 اضغط لرفع شيت الطلاب (Excel)</p>
+            <input type="file" id="setup_excel" hidden accept=".xlsx, .xls" onchange="analyzeExcel(event)">
+        </div>
+        <div id="analysis_result" style="display:none;">
+            <h4>الصفوف والفصول المكتشفة:</h4>
+            <div id="tags_area"></div>
+        </div>
     </div>
 
-    <div id="basic" class="setup-panel active">
-        <h3 class="section-title">البيانات الرسمية للمدرسة</h3>
+    <div class="setup-panel">
+        <h3 class="section-title">2. البيانات الرسمية</h3>
         <div class="form-group">
             <label>اسم المدرسة:</label>
-            <input type="text" id="sch_name" placeholder="ادخل الاسم بالكامل">
+            <input type="text" id="sch_name">
         </div>
         <div class="form-group">
             <label>كلمة مدير المدرسة:</label>
-            <textarea id="sch_principal" rows="3"></textarea>
+            <textarea id="sch_principal" rows="2"></textarea>
         </div>
         <div class="form-group">
             <label>كلمة رئيس الكنترول:</label>
-            <textarea id="sch_control" rows="3"></textarea>
+            <textarea id="sch_control" rows="2"></textarea>
         </div>
-        <button class="btn-save" onclick="saveData('schoolInfo')">حفظ بيانات التعريف 💾</button>
     </div>
 
-    <div id="structure" class="setup-panel">
-        <h3 class="section-title">تنظيم الصفوف والفصول الدراسية</h3>
-        <div class="form-group">
-            <label>عدد الصفوف بالمدرسة:</label>
-            <input type="number" id="grades_count" value="3" onchange="generateGradesUI()">
-        </div>
-        <div id="grades_container"></div>
-        <button class="btn-save" onclick="saveData('structure')">اعتماد هيكل الفصول 🏗️</button>
-    </div>
-
-    <div id="grading" class="setup-panel">
-        <h3 class="section-title">تخطيط زمن الدراسة والتقييم</h3>
-        <div class="grid-2">
+    <div class="setup-panel">
+        <h3 class="section-title">3. معايير الرصد والأقفال</h3>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
             <div class="form-group">
-                <label>إجمالي أسابيع الرصد:</label>
-                <input type="number" id="weeks_count" value="14" onchange="generateLocksUI()">
+                <label>عدد أسابيع الرصد:</label>
+                <input type="number" id="weeks_count" value="14">
             </div>
             <div class="form-group">
-                <label>عدد الاختبارات الشهرية:</label>
-                <input type="number" id="exams_count" value="2">
+                <label>أقصى درجة للتقييم (ت):</label>
+                <input type="number" id="max_t" value="15">
             </div>
         </div>
-        <div class="grid-2">
-            <div class="form-group"><label>التقييم (ت):</label><input type="number" id="max_t" value="15"></div>
-            <div class="form-group"><label>الواجب (و):</label><input type="number" id="max_v" value="15"></div>
-            <div class="form-group"><label>السلوك (س):</label><input type="number" id="max_s" value="10"></div>
-            <div class="form-group"><label>الاختبار (اخ):</label><input type="number" id="max_exam" value="30"></div>
-        </div>
-        <button class="btn-save" onclick="saveData('grading')">حفظ معايير الرصد 📊</button>
-    </div>
-
-    <div id="control" class="setup-panel">
-        <h3 class="section-title">التحكم في إتاحة الرصد</h3>
-        <h4>🔓 الأسابيع المفتوحة</h4>
-        <div id="locks_weeks" class="lock-grid"></div>
-        <h4 style="margin-top:20px;">🔓 الاختبارات المفتوحة</h4>
-        <div id="locks_exams" class="lock-grid"></div>
-        <button class="btn-save" onclick="saveData('locks')">تحديث حالة الأقفال 🔐</button>
+        <button class="btn-save" onclick="finalSave()">اعتماد الهيكل وحفظ الإعدادات 💾</button>
     </div>
 </div>
 
 <div class="bottom-nav">
-    <a href="manage-data.html" class="nav-next">
-        الخطوة التالية: إدارة المعلمين والطلاب ⬅️
-    </a>
+    <a href="manage-data.html" class="nav-link">الخطوة التالية: إدارة المعلمين والطلاب ⬅️</a>
 </div>
 
 <script>
-    const firebaseConfig = {
-        apiKey: "AIzaSyBePGZiqMPmZQdg36jZ4Rkdtd7OISxmob8",
-        authDomain: "rasd-tools.firebaseapp.com",
-        projectId: "rasd-tools"
-    };
+    const firebaseConfig = { apiKey: "AIzaSyBePGZiqMPmZQdg36jZ4Rkdtd7OISxmob8", projectId: "rasd-tools" };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
-    let schoolData = { grades: [] };
+    let detectedGrades = [];
 
-    async function init() {
-        try {
-            const doc = await db.collection('system').doc('config').get();
-            if(doc.exists) {
-                schoolData = doc.data();
-                loadInputs();
-            }
-            document.getElementById('connectionStatus').innerText = "✅ متصل بـ Firebase";
-            generateGradesUI();
-            generateLocksUI();
-        } catch(e) { document.getElementById('connectionStatus').innerText = "❌ خطأ اتصال"; }
+    async function analyzeExcel(e) {
+        const file = e.target.files[0];
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            const data = new Uint8Array(event.target.result);
+            const wb = XLSX.read(data, {type: 'array'});
+            const json = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], {header: 1});
+            
+            const rows = json.slice(1);
+            const structure = {};
+
+            rows.forEach(r => {
+                if(r[2] && r[3]) {
+                    const g = `الصف ${r[2]}`;
+                    const c = `${r[2]}/${r[3]}`;
+                    if(!structure[g]) structure[g] = new Set();
+                    structure[g].add(c);
+                }
+            });
+
+            detectedGrades = Object.keys(structure).map(gName => ({
+                name: gName,
+                classes: Array.from(structure[gName]).sort().map(cName => ({ name: cName, students: 0 }))
+            }));
+
+            renderAnalysis();
+        };
+        reader.readAsArrayBuffer(file);
     }
 
-    function openTab(evt, tabId) {
-        document.querySelectorAll('.setup-panel').forEach(p => p.classList.remove('active'));
-        document.querySelectorAll('.tab-link').forEach(l => l.classList.remove('active'));
-        document.getElementById(tabId).classList.add('active');
-        evt.currentTarget.classList.add('active');
+    function renderAnalysis() {
+        const area = document.getElementById('tags_area');
+        area.innerHTML = '';
+        detectedGrades.forEach(g => {
+            let clsText = g.classes.map(c => c.name).join(' , ');
+            area.innerHTML += `<div style="margin-bottom:10px;"><b>${g.name}:</b> <span class="grade-tag">${clsText}</span></div>`;
+        });
+        document.getElementById('analysis_result').style.display = 'block';
+        document.getElementById('file_info').innerText = "✅ تم استخراج الهيكل بنجاح";
     }
 
-    function generateGradesUI() {
-        const count = document.getElementById('grades_count').value;
-        const container = document.getElementById('grades_container');
-        container.innerHTML = '';
-        for(let i=1; i<=count; i++) {
-            const gradeData = schoolData.grades && schoolData.grades[i-1] ? schoolData.grades[i-1] : { name: `الصف ${i}`, classes: [] };
-            let html = `<div class="grade-card">
-                <input type="text" value="${gradeData.name}" id="grade-name-${i}" style="font-weight:bold; border:none; background:none;">
-                <div id="classes-area-${i}">`;
-            gradeData.classes.forEach((cls, cIdx) => { html += createClassRow(i, cIdx, cls.name, cls.students); });
-            html += `</div><button class="btn-add" onclick="addClassRow(${i})">+ إضافة فصل</button></div>`;
-            container.innerHTML += html;
-        }
-    }
+    async function finalSave() {
+        if(detectedGrades.length === 0) return alert("يرجى رفع ملف الطلاب أولاً لاستخراج الهيكل");
 
-    function createClassRow(gIdx, cIdx, name='', count=0) {
-        return `<div class="class-row">
-            <input type="text" placeholder="اسم الفصل" value="${name}">
-            <input type="number" placeholder="طلاب" value="${count}">
-            <span class="btn-del" onclick="this.parentElement.remove()">×</span>
-        </div>`;
-    }
-
-    function addClassRow(gIdx) {
-        document.getElementById(`classes-area-${gIdx}`).insertAdjacentHTML('beforeend', createClassRow(gIdx, Date.now()));
-    }
-
-    function generateLocksUI() {
-        const wCount = document.getElementById('weeks_count').value;
-        const eCount = document.getElementById('exams_count').value;
-        const wContainer = document.getElementById('locks_weeks');
-        const eContainer = document.getElementById('locks_exams');
-        wContainer.innerHTML = ''; eContainer.innerHTML = '';
-        for(let i=1; i<=wCount; i++) {
-            const checked = (schoolData.openWeeks && schoolData.openWeeks.includes(`w${i}`)) ? 'checked' : '';
-            wContainer.innerHTML += `<label class="lock-item"><input type="checkbox" value="w${i}" ${checked}> أسبوع ${i}</label>`;
-        }
-        for(let i=1; i<=eCount; i++) {
-            const checked = (schoolData.openExams && schoolData.openExams.includes(`ex${i}`)) ? 'checked' : '';
-            eContainer.innerHTML += `<label class="lock-item"><input type="checkbox" value="ex${i}" ${checked}> اختبار ${i}</label>`;
-        }
-    }
-
-    async function saveData(type) {
         const config = {
             schoolName: document.getElementById('sch_name').value,
             principalWord: document.getElementById('sch_principal').value,
             controlWord: document.getElementById('sch_control').value,
             weeksCount: parseInt(document.getElementById('weeks_count').value),
-            examsCount: parseInt(document.getElementById('exams_count').value),
             maxT: parseInt(document.getElementById('max_t').value),
-            maxV: parseInt(document.getElementById('max_v').value),
-            maxS: parseInt(document.getElementById('max_s').value),
-            maxExam: parseInt(document.getElementById('max_exam').value),
-            openWeeks: Array.from(document.querySelectorAll('#locks_weeks input:checked')).map(i => i.value),
-            openExams: Array.from(document.querySelectorAll('#locks_exams input:checked')).map(i => i.value),
-            grades: []
+            grades: detectedGrades,
+            openWeeks: ["w1"], // فتح الأسبوع الأول افتراضياً
+            updatedAt: Date.now()
         };
-        const gCount = document.getElementById('grades_count').value;
-        for(let i=1; i<=gCount; i++) {
-            const grade = { name: document.getElementById(`grade-name-${i}`).value, classes: [] };
-            const rows = document.querySelectorAll(`#classes-area-${i} .class-row`);
-            rows.forEach(row => {
-                const inputs = row.querySelectorAll('input');
-                grade.classes.push({ name: inputs[0].value, students: parseInt(inputs[1].value) });
-            });
-            config.grades.push(grade);
-        }
-        await db.collection('system').doc('config').set(config, {merge: true});
-        schoolData = config;
-        alert("✅ تم الحفظ بنجاح");
-    }
 
-    function loadInputs() {
-        document.getElementById('sch_name').value = schoolData.schoolName || '';
-        document.getElementById('sch_principal').value = schoolData.principalWord || '';
-        document.getElementById('sch_control').value = schoolData.controlWord || '';
-        document.getElementById('weeks_count').value = schoolData.weeksCount || 14;
-        document.getElementById('exams_count').value = schoolData.examsCount || 2;
+        try {
+            await db.collection('system').doc('config').set(config);
+            alert("✅ تم اعتماد هيكل المدرسة بنجاح بناءً على ملف الطلاب");
+        } catch(e) { alert("❌ خطأ في الحفظ"); }
     }
-
-    window.onload = init;
 </script>
 </body>
 </html>
