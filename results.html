@@ -3,46 +3,63 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Results | Management</title>
+    <title>الكنترول المركزي | v2026</title>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
-        :root { --navy: #0a192f; --gold: #c5a059; }
-        body { font-family: 'Segoe UI', sans-serif; background: #f8fafc; margin: 0; padding-bottom: 30px; }
-        .nav-header { background: var(--navy); color: white; padding: 15px; border-bottom: 3px solid var(--gold); display: flex; justify-content: space-between; align-items: center; }
-        .nav-links a { color: #cbd5e1; text-decoration: none; font-size: 13px; font-weight: bold; margin-left: 10px; }
-        .nav-links a.active { color: var(--gold); }
-        .container { padding: 10px; }
-        .filter-box { background: white; padding: 15px; border-radius: 12px; margin-bottom: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-        select { width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 8px; margin-bottom: 10px; font-size: 16px; }
-        .btn-act { width: 100%; padding: 12px; background: var(--navy); color: var(--gold); border: none; border-radius: 8px; font-weight: bold; margin-bottom: 5px; cursor: pointer; }
-        .table-wrap { background: white; border-radius: 12px; overflow-x: auto; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-        table { width: 100%; border-collapse: collapse; font-size: 12px; min-width: 600px; }
-        th, td { border: 1px solid #eee; padding: 10px; text-align: center; }
-        th { background: #f1f5f9; color: var(--navy); }
+        :root { --navy: #0a192f; --gold: #c5a059; --bg: #f8fafc; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; padding-bottom: 50px; }
+        .academic-header { background: var(--navy); color: white; padding: 15px 20px; border-bottom: 3px solid var(--gold); display: flex; justify-content: space-between; align-items: center; }
+        .nav-links a { color: #cbd5e1; text-decoration: none; font-size: 13px; font-weight: bold; padding: 8px 12px; }
+        .nav-links a.active { background: var(--gold); color: var(--navy); border-radius: 6px; }
+        .container { padding: 15px; max-width: 1200px; margin: auto; }
+        .card { background: white; border-radius: 12px; padding: 20px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border-right: 5px solid var(--gold); }
+        .grid-filters { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 15px; }
+        select, input { padding: 10px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 14px; }
+        .btn-action { padding: 12px; background: var(--navy); color: var(--gold); border: none; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.3s; }
+        .table-wrap { overflow-x: auto; background: white; border-radius: 12px; border: 1px solid #e2e8f0; }
+        table { width: 100%; border-collapse: collapse; font-size: 12px; min-width: 1000px; }
+        th, td { border: 1px solid #f1f5f9; padding: 8px; text-align: center; }
+        th { background: #f8fafc; color: #475569; position: sticky; top: 0; }
+        .highlight { background: #fffbeb; font-weight: bold; }
     </style>
 </head>
 <body>
-    <div class="nav-header">
+
+    <header class="academic-header">
         <div class="nav-links">
             <a href="school-setup.html">🏠 الإعدادات</a>
             <a href="manage-data.html">👥 الإدارة</a>
-            <a href="results.html" class="active">📊 النتائج</a>
+            <a href="results.html" class="active">📊 الكنترول</a>
         </div>
-        <button onclick="logout()" style="background:transparent; color:var(--gold); border:1px solid var(--gold); padding:4px 10px; border-radius:5px; font-size:12px;">خروج</button>
-    </div>
+        <button onclick="logout()" style="background:transparent; border:1px solid var(--gold); color:var(--gold); padding:5px 10px; border-radius:8px; cursor:pointer;">خروج</button>
+    </header>
 
     <div class="container">
-        <div class="filter-box">
-            <select id="selGrade"><option value="">اختر الصف الدراسي...</option></select>
-            <button class="btn-act" onclick="loadResults()">عرض الكشف 🔍</button>
-            <button class="btn-act" style="background:#065f46; color:white;" onclick="exportExcel()">تصدير Excel 📥</button>
+        <div class="card">
+            <h3>⚙️ إعداد تقرير الكنترول</h3>
+            <div class="grid-filters">
+                <select id="repGrade" onchange="updateClassList()"><option value="">اختر الصف...</option></select>
+                <select id="repClass"><option value="">كل الفصول</option></select>
+                <select id="repSubject"><option value="">كل المواد</option></select>
+                <select id="repPeriod">
+                    <option value="p1">الفترة الأولى (أسبوع 1-7 + اختبار 1)</option>
+                    <option value="p2">الفترة الثانية (أسبوع 8-14 + اختبار 2)</option>
+                    <option value="combined">تقرير مجمع (متوسط الفترتين)</option>
+                    <option value="full">تقرير شامل (كل الأسابيع)</option>
+                </select>
+            </div>
+            <div style="display:flex; gap:10px;">
+                <button class="btn-action" style="flex:2" onclick="generateReport()">توليد التقرير المعقد 🔍</button>
+                <button class="btn-action" style="background:#065f46; color:white; flex:1" onclick="exportReport()">تصدير Excel 📥</button>
+            </div>
         </div>
+
         <div class="table-wrap">
-            <table id="tblRes">
-                <thead><tr id="hRow"><th>م</th><th>الاسم</th><th>الفصل</th></tr></thead>
-                <tbody></tbody>
+            <table id="mainReportTable">
+                <thead id="reportHeader"></thead>
+                <tbody id="reportBody"></tbody>
             </table>
         </div>
     </div>
@@ -52,45 +69,133 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
+    let schoolConfig = {};
     window.onload = async () => {
         const doc = await db.collection('system').doc('config').get();
         if(doc.exists) {
-            doc.data().grades.forEach(g => document.getElementById('selGrade').innerHTML += `<option value="${g.name}">${g.name}</option>`);
+            schoolConfig = doc.data();
+            schoolConfig.grades.forEach(g => document.getElementById('repGrade').innerHTML += `<option value="${g.name}">${g.name}</option>`);
+            // جلب المواد من سجلات المعلمين لضمان الشمولية
+            const tSnap = await db.collection('teachers').get();
+            let subs = new Set();
+            tSnap.forEach(t => t.data().subjects.forEach(s => subs.add(s)));
+            subs.forEach(s => document.getElementById('repSubject').innerHTML += `<option value="${s}">${s}</option>`);
         }
     };
 
-    async function loadResults() {
-        const grade = document.getElementById('selGrade').value;
-        if(!grade) return;
+    function updateClassList() {
+        const gName = document.getElementById('repGrade').value;
+        const cSel = document.getElementById('repClass');
+        cSel.innerHTML = '<option value="">كل الفصول</option>';
+        const grade = schoolConfig.grades.find(g => g.name === gName);
+        if(grade) grade.classes.forEach(c => cSel.innerHTML += `<option value="${c.name}">${c.name}</option>`);
+    }
+
+    async function generateReport() {
+        const grade = document.getElementById('repGrade').value;
+        const cls = document.getElementById('repClass').value;
+        const sub = document.getElementById('repSubject').value;
+        const period = document.getElementById('repPeriod').value;
+
+        if(!grade) return alert("يرجى اختيار الصف");
+
+        document.getElementById('reportHeader').innerHTML = '<tr><td colspan="10">جاري الحسابات المعقدة...</td></tr>';
+        
+        // 1. جلب الطلاب
         const gNum = grade.match(/\d+/)[0];
-        const studentsSnap = await db.collection('students').get();
-        const students = studentsSnap.docs.map(d => ({id: d.id, ...d.data()})).filter(s => s.classCode.startsWith(gNum + '/')).sort((a,b) => a.sortOrder - b.sortOrder);
+        let sQuery = db.collection('students');
+        if(cls) sQuery = sQuery.where('classCode', '==', cls);
+        const sSnap = await sQuery.get();
+        const students = sSnap.docs.map(d => ({id:d.id, ...d.data()}))
+                            .filter(s => s.classCode.startsWith(gNum + '/'))
+                            .sort((a,b) => a.sortOrder - b.sortOrder);
+
+        // 2. جلب الدرجات
+        let gQuery = db.collection('grades');
+        if(sub) gQuery = gQuery.where('subject', '==', sub);
+        const gSnap = await gQuery.get();
+        const grades = gSnap.docs.map(d => d.data());
+
+        renderFinalUI(students, grades, period, sub);
+    }
+
+    function renderFinalUI(students, grades, period, subject) {
+        const header = document.getElementById('reportHeader');
+        const body = document.getElementById('reportBody');
         
-        const gradesSnap = await db.collection('grades').get();
-        const grades = gradesSnap.docs.map(d => d.data());
-        const subjects = [...new Set(grades.map(g => g.subject))];
-        
-        const hRow = document.getElementById('hRow');
-        hRow.innerHTML = `<th>م</th><th>الاسم</th><th>الفصل</th>` + subjects.map(s => `<th>${s}</th>`).join('');
-        
-        const tbody = document.querySelector('#tblRes tbody');
-        tbody.innerHTML = students.map(s => {
+        // تحديد أسابيع الفترة
+        let weeks = (period === 'p1') ? ['w1','w2','w3','w4','w5','w6','w7'] : 
+                    (period === 'p2') ? ['w8','w9','w10','w11','w12','w13','w14'] : 
+                    Array.from({length: 14}, (_, i) => `w${i+1}`);
+        let examType = (period === 'p1') ? 'ex1' : (period === 'p2') ? 'ex2' : 'combined';
+
+        let headHtml = `<tr><th>م</th><th>الاسم</th><th>الفصل</th>`;
+        if(period !== 'combined') {
+            weeks.forEach(w => headHtml += `<th>${w.substring(1)} (ت)</th><th>${w.substring(1)} (و)</th>`);
+            headHtml += `<th class="highlight">متوسط ت</th><th class="highlight">متوسط و</th><th class="highlight">متوسط س</th><th class="highlight">مجموع المتوسطات</th><th>الاختبار</th><th class="highlight">المجموع</th>`;
+        } else {
+            headHtml += `<th>متوسط ت (مجمع)</th><th>متوسط و (مجمع)</th><th>متوسط س (مجمع)</th><th>مجموع الاختبارين</th><th class="highlight">المجموع النهائي</th>`;
+        }
+        header.innerHTML = headHtml + `</tr>`;
+
+        body.innerHTML = students.map(s => {
             let row = `<td>${s.sortOrder}</td><td style="text-align:right">${s.name}</td><td>${s.classCode}</td>`;
-            subjects.forEach(sub => {
-                const total = grades.filter(g => g.sid === s.id && g.subject === sub).reduce((acc, curr) => acc + curr.score, 0);
-                row += `<td>${total || 0}</td>`;
-            });
+            
+            // حساب المتوسطات
+            let res = calculateMetrics(s.id, grades, weeks, examType, period);
+            
+            if(period !== 'combined') {
+                weeks.forEach(w => {
+                    row += `<td>${res.detail[w]?.t || '-'}</td><td>${res.detail[w]?.v || '-'}</td>`;
+                });
+                row += `<td class="highlight">${res.avgT}</td><td class="highlight">${res.avgV}</td><td class="highlight">${res.avgS}</td><td class="highlight">${res.totalAvg}</td><td>${res.examScore}</td><td class="highlight">${res.final}</td>`;
+            } else {
+                row += `<td>${res.avgT}</td><td>${res.avgV}</td><td>${res.avgS}</td><td>${res.examScore}</td><td class="highlight">${res.final}</td>`;
+            }
             return `<tr>${row}</tr>`;
         }).join('');
     }
 
-    function exportExcel() {
-        const ws = XLSX.utils.table_to_sheet(document.getElementById('tblRes'));
-        ws['!views'] = [{RTL: true}];
-        const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, "النتائج");
-        XLSX.writeFile(wb, `Report_${new Date().getTime()}.xlsx`);
+    function calculateMetrics(sid, allGrades, weeks, examType, period) {
+        let sGrades = allGrades.filter(g => g.sid === sid);
+        let detail = {};
+        let sumT = 0, sumV = 0, sumS = 0, count = 0;
+
+        weeks.forEach(w => {
+            let wt = sGrades.find(g => g.week === w && g.type === 't')?.score || 0;
+            let wv = sGrades.find(g => g.week === w && g.type === 'v')?.score || 0;
+            let ws = sGrades.find(g => g.week === w && g.type === 's')?.score || 0;
+            detail[w] = {t: wt, v: wv, s: ws};
+            sumT += wt; sumV += wv; sumS += ws;
+            if(wt > 0 || wv > 0) count++;
+        });
+
+        let avgT = count > 0 ? (sumT / count).toFixed(1) : 0;
+        let avgV = count > 0 ? (sumV / count).toFixed(1) : 0;
+        let avgS = count > 0 ? (sumS / count).toFixed(1) : 0;
+        
+        let examScore = 0;
+        if(period === 'combined') {
+            examScore = (allGrades.find(g => g.sid === sid && g.week === 'ex1')?.score || 0) + 
+                        (allGrades.find(g => g.sid === sid && g.week === 'ex2')?.score || 0);
+        } else {
+            examScore = allGrades.find(g => g.sid === sid && g.week === examType)?.score || 0;
+        }
+
+        let totalAvg = (parseFloat(avgT) + parseFloat(avgV) + parseFloat(avgS)).toFixed(1);
+        let final = (parseFloat(totalAvg) + parseFloat(examScore)).toFixed(1);
+
+        return { detail, avgT, avgV, avgS, totalAvg, examScore, final };
     }
+
+    function exportReport() {
+        const wb = XLSX.utils.table_to_sheet(document.getElementById('mainReportTable'));
+        wb['!views'] = [{RTL: true}];
+        const out = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(out, wb, "تقرير الكنترول");
+        XLSX.writeFile(out, `Control_Report_${new Date().getTime()}.xlsx`);
+    }
+
     function logout() { sessionStorage.clear(); window.location.href="index.html"; }
 </script>
 </body>
