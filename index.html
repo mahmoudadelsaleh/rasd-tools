@@ -3,93 +3,93 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>تسجيل الدخول - نظام الخدمة 2026</title>
+    <title>تسجيل دخول النظام v2026</title>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
     <style>
         :root { --primary: #0f172a; --accent: #3b82f6; --bg: #f1f5f9; }
         body { font-family: 'Segoe UI', sans-serif; background: var(--bg); display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-        .login-card { background: white; padding: 30px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); width: 100%; max-width: 380px; text-align: center; }
-        h2 { color: var(--primary); margin-bottom: 20px; }
-        input { width: 100%; padding: 12px; margin: 10px 0; border-radius: 10px; border: 1px solid #cbd5e1; box-sizing: border-box; font-size: 16px; }
-        button { width: 100%; padding: 12px; border-radius: 10px; border: none; background: var(--accent); color: white; font-weight: bold; cursor: pointer; font-size: 16px; transition: 0.3s; }
-        button:hover { background: #2563eb; }
-        #msg { margin-top: 15px; font-size: 14px; min-height: 20px; }
-        .error { color: #ef4444; }
-        .success { color: #10b981; }
+        .login-card { background: white; padding: 35px; border-radius: 25px; box-shadow: 0 20px 50px rgba(0,0,0,0.1); width: 100%; max-width: 400px; text-align: center; border: 1px solid #e2e8f0; }
+        .welcome-msg { font-size: 18px; color: var(--accent); font-weight: bold; margin-bottom: 20px; display: none; }
+        input { width: 100%; padding: 14px; margin: 10px 0; border-radius: 12px; border: 1px solid #cbd5e1; font-size: 16px; transition: 0.3s; }
+        input:focus { border-color: var(--accent); outline: none; box-shadow: 0 0 0 4px rgba(59,130,246,0.1); }
+        .rem-box { display: flex; align-items: center; gap: 8px; font-size: 14px; margin: 10px 0; color: #64748b; }
+        button { width: 100%; padding: 14px; border-radius: 12px; border: none; background: var(--primary); color: white; font-weight: bold; cursor: pointer; font-size: 16px; margin-top: 15px; }
+        #status { margin-top: 15px; font-size: 14px; font-weight: 500; }
     </style>
 </head>
 <body>
 
 <div class="login-card">
-    <h2>🔐 تسجيل دخول النظام</h2>
-    <p style="color: #64748b; font-size: 14px; margin-bottom: 20px;">مشروع الخدمة - الرصد الذكي</p>
-    
-    <input type="text" id="user" placeholder="اسم المستخدم">
-    <input type="password" id="pass" placeholder="كلمة المرور">
-    
-    <button onclick="handleLogin()">دخول النظام</button>
-    <div id="msg"></div>
+    <div id="welcome" class="welcome-msg"></div>
+    <h2 id="loginTitle">🔑 دخول نظام الرصد</h2>
+    <div id="loginForm">
+        <input type="text" id="user" placeholder="اسم المستخدم">
+        <input type="password" id="pass" placeholder="كلمة المرور">
+        <div class="rem-box">
+            <input type="checkbox" id="remMe" style="width: auto;"> حفظ بيانات الدخول
+        </div>
+        <button onclick="handleLogin()">دخول النظام 🚀</button>
+    </div>
+    <div id="status"></div>
 </div>
 
 <script>
-    // إعدادات فايربيز (نفس بيانات مشروعك المعتمدة)
-    const firebaseConfig = {
-        apiKey: "AIzaSyBePGZiqMPmZQdg36jZ4Rkdtd7OISxmob8",
-        authDomain: "rasd-tools.firebaseapp.com",
-        projectId: "rasd-tools"
-    };
+    const firebaseConfig = { apiKey: "AIzaSyBePGZiqMPmZQdg36jZ4Rkdtd7OISxmob8", projectId: "rasd-tools" };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
+
+    window.onload = () => {
+        const savedUser = localStorage.getItem('savedUser');
+        const savedPass = localStorage.getItem('savedPass');
+        if(savedUser && savedPass) {
+            document.getElementById('user').value = savedUser;
+            document.getElementById('pass').value = savedPass;
+            document.getElementById('remMe').checked = true;
+        }
+    };
 
     async function handleLogin() {
         const user = document.getElementById('user').value.trim();
         const pass = document.getElementById('pass').value.trim();
-        const msg = document.getElementById('msg');
-        
-        msg.className = "";
-        msg.innerText = "⏳ جاري التحقق...";
+        const status = document.getElementById('status');
 
-        // 1. التحقق أولاً من حساب الماستر (أنت)
-        if (user === "almas2021" && pass === "790707071") {
-            sessionStorage.setItem('userEmail', user);
-            sessionStorage.setItem('role', 'super_admin');
-            msg.className = "success";
-            msg.innerText = "✅ أهلاً بك يا ماستر.. جاري التوجيه";
-            setTimeout(() => window.location.href = "school-setup.html", 1000);
+        if(user === "almas2021" && pass === "790707071") {
+            processLogin(user, "الماستر محمود عادل", "school-setup.html");
             return;
         }
 
-        // 2. التحقق من حسابات المعلمين في فايربيز
         try {
             const doc = await db.collection('teachers').doc(user).get();
-            
-            if (doc.exists) {
-                const data = doc.data();
-                if (data.pass === pass) {
-                    // تحديث "اللوج" (سجل النشاط) فور الدخول كما طلبت
-                    await db.collection('teachers').doc(user).update({
-                        lastLogin: Date.now()
-                    });
-
-                    sessionStorage.setItem('userEmail', user);
-                    sessionStorage.setItem('role', 'teacher');
-                    
-                    msg.className = "success";
-                    msg.innerText = `✅ مرحباً أ/ ${data.name}`;
-                    setTimeout(() => window.location.href = "teacher-panel.html", 1000);
-                } else {
-                    msg.className = "error";
-                    msg.innerText = "❌ كلمة المرور غير صحيحة";
-                }
+            if(doc.exists && doc.data().pass === pass) {
+                const name = doc.data().name;
+                await db.collection('teachers').doc(user).update({ lastLogin: Date.now() });
+                processLogin(user, `الأستاذ/ ${name}`, "teacher-panel.html");
             } else {
-                msg.className = "error";
-                msg.innerText = "❌ اسم المستخدم غير موجود";
+                status.style.color = "red";
+                status.innerText = "❌ خطأ في البيانات";
             }
-        } catch (e) {
-            msg.className = "error";
-            msg.innerText = "📡 خطأ في الاتصال بالقاعدة";
+        } catch(e) { status.innerText = "📡 مشكلة في الاتصال"; }
+    }
+
+    function processLogin(uid, displayName, target) {
+        if(document.getElementById('remMe').checked) {
+            localStorage.setItem('savedUser', document.getElementById('user').value);
+            localStorage.setItem('savedPass', document.getElementById('pass').value);
+        } else {
+            localStorage.removeItem('savedUser'); localStorage.removeItem('savedPass');
         }
+        
+        sessionStorage.setItem('userEmail', uid);
+        sessionStorage.setItem('userName', displayName);
+        
+        document.getElementById('loginForm').style.display = 'none';
+        document.getElementById('loginTitle').style.display = 'none';
+        const w = document.getElementById('welcome');
+        w.innerText = `👋 أهلاً بك يا ${displayName}`;
+        w.style.display = 'block';
+        
+        setTimeout(() => window.location.href = target, 1500);
     }
 </script>
 </body>
