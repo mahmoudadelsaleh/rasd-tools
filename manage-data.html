@@ -3,52 +3,28 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Management Center | v2026</title>
+    <title>Management Center | Pro v2026</title>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root { --navy: #0a192f; --gold: #c5a059; --bg: #f8fafc; --white: #ffffff; }
         body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; padding-bottom: 30px; }
-        
-        /* Nav Mobile */
-        .nav-header { background: var(--navy); color: white; padding: 15px; position: sticky; top: 0; z-index: 100; border-bottom: 3px solid var(--gold); display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,0.2); }
-        .nav-links { display: flex; gap: 8px; }
-        .nav-links a { color: #cbd5e1; text-decoration: none; font-size: 13px; font-weight: bold; padding: 6px 10px; border-radius: 5px; transition: 0.3s; }
-        .nav-links a.active { background: var(--gold); color: var(--navy); }
-
+        .nav-header { background: var(--navy); color: white; padding: 15px; position: sticky; top: 0; z-index: 100; border-bottom: 3px solid var(--gold); display: flex; justify-content: space-between; align-items: center; }
+        .nav-links a { color: #cbd5e1; text-decoration: none; font-size: 13px; font-weight: bold; padding: 6px 10px; margin-left: 5px; }
+        .nav-links a.active { background: var(--gold); color: var(--navy); border-radius: 5px; }
         .container { padding: 15px; max-width: 900px; margin: auto; }
-        
-        /* Tab System */
-        .tab-nav { display: flex; background: #e2e8f0; border-radius: 10px; margin-bottom: 20px; overflow: hidden; }
-        .tab-btn { flex: 1; padding: 15px; border: none; cursor: pointer; font-weight: bold; color: #475569; background: none; font-size: 14px; }
-        .tab-btn.active { background: var(--white); color: var(--navy); border-bottom: 3px solid var(--gold); }
-
         .card { background: var(--white); border-radius: 12px; padding: 25px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border-right: 5px solid var(--gold); }
-        .card h3 { margin: 0 0 20px 0; font-size: 18px; color: var(--navy); border-bottom: 1px solid #f1f5f9; padding-bottom: 10px; }
-        
-        input, select { width: 100%; padding: 14px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 15px; margin-bottom: 15px; box-sizing: border-box; }
-        label { font-size: 13px; font-weight: bold; color: #64748b; display: block; margin-bottom: 8px; }
-        
-        .btn-prime { width: 100%; padding: 16px; background: var(--navy); color: var(--gold); border: none; border-radius: 10px; font-weight: bold; font-size: 16px; cursor: pointer; transition: 0.3s; }
-        .btn-prime:active { transform: scale(0.98); }
-
-        /* Excel Zone */
-        .excel-zone { border: 2px dashed var(--gold); background: #fdfbf7; padding: 30px; text-align: center; border-radius: 12px; cursor: pointer; }
-
-        /* Responsive Table */
-        .table-wrap { width: 100%; overflow-x: auto; background: white; border-radius: 10px; }
-        table { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 500px; }
+        input, select { width: 100%; padding: 14px; border: 1px solid #e2e8f0; border-radius: 8px; margin-bottom: 12px; box-sizing: border-box; }
+        .btn-prime { width: 100%; padding: 16px; background: var(--navy); color: var(--gold); border: none; border-radius: 10px; font-weight: bold; cursor: pointer; }
+        .table-wrap { width: 100%; overflow-x: auto; background: white; border-radius: 10px; margin-top: 15px; }
+        table { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 600px; }
         th, td { border-bottom: 1px solid #f1f5f9; padding: 15px; text-align: center; }
-        th { background: #f8fafc; color: #64748b; font-weight: 800; }
-        
-        .log-badge { padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: bold; background: #f1f5f9; }
-        .online { background: #dcfce7; color: #166534; }
-        .action-icon { padding: 8px; border-radius: 6px; border: none; cursor: pointer; margin: 0 3px; }
-
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        .panel { display: none; animation: fadeIn 0.4s ease; }
-        .panel.active { display: block; }
+        .whatsapp-btn { color: #25d366; font-size: 18px; cursor: pointer; text-decoration: none; }
+        .edit-icon { color: var(--navy); cursor: pointer; margin-left: 10px; }
+        .panel { display: none; } .panel.active { display: block; animation: fadeIn 0.4s; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
     </style>
 </head>
 <body>
@@ -59,56 +35,29 @@
             <a href="manage-data.html" class="active">👥 الإدارة</a>
             <a href="results.html">📊 النتائج</a>
         </div>
-        <button onclick="logout()" style="background:transparent; color:var(--gold); border:1px solid var(--gold); padding:5px 12px; border-radius:8px; font-size:12px; font-weight:bold;">خروج</button>
+        <button onclick="logout()" style="background:transparent; color:var(--gold); border:1px solid var(--gold); padding:5px 10px; border-radius:8px;">خروج</button>
     </div>
 
     <div class="container">
-        <div class="tab-nav">
-            <button class="tab-btn active" onclick="switchPanel(event, 'p_teachers')">👨‍🏫 إدارة المعلمين</button>
-            <button class="tab-btn" onclick="switchPanel(event, 'p_students')">🎓 شيت الطلاب</button>
+        <div class="card">
+            <h3 id="fTitle">🏢 إدارة شؤون المعلمين</h3>
+            <input type="text" id="t_name" placeholder="اسم المعلم الرباعي">
+            <input type="text" id="t_user" placeholder="اسم المستخدم (Username)">
+            <input type="text" id="t_pass" placeholder="كلمة المرور">
+            <input type="text" id="t_phone" placeholder="رقم الموبايل (مثال: 01552402912)">
+            <input type="text" id="t_subs" placeholder="المواد الدراسية">
+            <div id="cls_checks" style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; padding:10px; background:#f8fafc;"></div>
+            <button class="btn-prime" style="margin-top:15px;" onclick="saveTeacher()">حفظ واعتماد البيانات 💾</button>
+            <button id="cancelEdit" style="display:none; width:100%; margin-top:5px; background:#64748b; color:white; border:none; padding:10px; border-radius:8px;" onclick="resetForm()">إلغاء التعديل</button>
         </div>
 
-        <div id="p_teachers" class="panel active">
-            <div class="card">
-                <h3 id="fTitle">إضافة معلم جديد</h3>
-                <input type="text" id="t_name" placeholder="الاسم الكامل للمعلم">
-                <input type="text" id="t_user" placeholder="اسم المستخدم (Username)">
-                <input type="text" id="t_pass" placeholder="كلمة المرور">
-                <label>المواد الدراسية (فصل بفاصلة):</label>
-                <input type="text" id="t_subs" placeholder="مثال: رياضيات, دين">
-                <label>تحديد الفصول الدراسية:</label>
-                <div id="cls_checks" style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; background:#f8fafc; padding:15px; border-radius:10px;"></div>
-                <button class="btn-prime" style="margin-top:20px;" onclick="saveTeacherData()">حفظ البيانات الأكاديمية 💾</button>
-            </div>
-
-            <div class="card" style="padding:10px;">
-                <h3>سجل المعلمين والنشاط (Log)</h3>
-                <div class="table-wrap">
-                    <table id="tTable">
-                        <thead><tr><th>المعلم</th><th>المواد</th><th>آخر ظهور</th><th>إجراء</th></tr></thead>
-                        <tbody></tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-
-        <div id="p_students" class="panel">
-            <div class="card">
-                <h3>استيراد قاعدة بيانات الطلاب</h3>
-                <div class="excel-zone" onclick="document.getElementById('xl_file').click()">
-                    <p style="font-weight:bold; color:var(--navy);">📁 انقر لرفع ملف Excel</p>
-                    <p style="font-size:11px; color:#64748b;">[مسلسل] [اسم] [صف] [فصل]</p>
-                    <input type="file" id="xl_file" hidden accept=".xlsx, .xls" onchange="processStudentExcel(event)">
-                </div>
-                <div id="xl_preview" style="display:none; margin-top:20px;">
-                    <button class="btn-prime" style="background:#059669; color:white;" onclick="pushStudents()">اعتماد ورفع البيانات 🚀</button>
-                    <div class="table-wrap" style="margin-top:15px;">
-                        <table id="pTable">
-                            <thead><tr><th>م</th><th>الاسم</th><th>كود الفصل</th></tr></thead>
-                            <tbody></tbody>
-                        </table>
-                    </div>
-                </div>
+        <div class="card" style="padding:10px;">
+            <h3>📋 سجل هيئة التدريس</h3>
+            <div class="table-wrap">
+                <table id="tTable">
+                    <thead><tr><th>المعلم</th><th>بيانات الدخول</th><th>تواصل</th><th>إجراء</th></tr></thead>
+                    <tbody></tbody>
+                </table>
             </div>
         </div>
     </div>
@@ -117,39 +66,37 @@
     const firebaseConfig = { apiKey: "AIzaSyBePGZiqMPmZQdg36jZ4Rkdtd7OISxmob8", projectId: "rasd-tools" };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
-    let schoolConf = {}, excelData = [];
+    
+    // ضع هنا رابط موقعك المخصص سواء كان على Firebase أو Domain خاص
+    const PLATFORM_URL = window.location.origin; 
 
     window.onload = async () => {
-        const u = sessionStorage.getItem('userName');
-        if(!u) window.location.href="index.html";
-        const doc = await db.collection('system').doc('config').get();
-        if(doc.exists) { 
-            schoolConf = doc.data(); 
+        const conf = await db.collection('system').doc('config').get();
+        if(conf.exists) {
             const cont = document.getElementById('cls_checks');
-            schoolConf.grades.forEach(g => g.classes.forEach(c => {
-                const val = `${g.name} - ${c.name}`;
-                cont.innerHTML += `<label style="font-size:12px;"><input type="checkbox" name="t_cls" value="${val}"> ${val}</label>`;
+            conf.data().grades.forEach(g => g.classes.forEach(c => {
+                cont.innerHTML += `<label style="font-size:12px;"><input type="checkbox" name="t_cls" value="${g.name} - ${c.name}"> ${g.name} - ${c.name}</label>`;
             }));
         }
         renderTeachers();
     };
 
-    function switchPanel(e, id) {
-        document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-        document.getElementById(id).classList.add('active');
-        e.currentTarget.classList.add('active');
-    }
-
-    async function saveTeacherData() {
+    async function saveTeacher() {
         const user = document.getElementById('t_user').value.trim();
         const name = document.getElementById('t_name').value.trim();
         const pass = document.getElementById('t_pass').value.trim();
-        const subs = document.getElementById('t_subs').value.split(',').map(s => s.trim());
+        const phone = document.getElementById('t_phone').value.trim();
+        const subs = document.getElementById('t_subs').value.split(',');
         const clss = Array.from(document.querySelectorAll('input[name="t_cls"]:checked')).map(c => c.value);
-        if(!user || !name) return alert("أكمل البيانات");
-        await db.collection('teachers').doc(user).set({ name, pass, subjects: subs, classes: clss, updatedAt: Date.now() }, {merge:true});
-        alert("✅ تم الحفظ"); location.reload();
+
+        if(!user || !name) return alert("الاسم والمستخدم حقول إجبارية");
+
+        await db.collection('teachers').doc(user).set({
+            name, pass, phone, subjects: subs, classes: clss, updatedAt: Date.now()
+        }, {merge:true});
+        
+        alert("✅ تم تحديث بيانات المعلم");
+        resetForm(); renderTeachers();
     }
 
     async function renderTeachers() {
@@ -158,40 +105,49 @@
         tbody.innerHTML = '';
         snap.forEach(doc => {
             const t = doc.data();
-            const log = t.lastLogin ? new Date(t.lastLogin).toLocaleString('ar-EG') : 'لم يسجل دخول';
-            tbody.innerHTML += `<tr><td><b>${t.name}</b></td><td>${t.subjects.join(', ')}</td><td><span class="log-badge ${t.lastLogin?'online':''}">${log}</span></td><td><button onclick="delT('${doc.id}')" style="background:none; border:none; color:red; cursor:pointer;">❌</button></td></tr>`;
+            // تجهيز نص رسالة الواتساب
+            const msg = window.encodeURIComponent(`أهلاً بك يا ${t.name} في منصة الرصد الذكي v2026 🏛️\n\nبيانات دخولك هي:\nاسم المستخدم: ${doc.id}\nكلمة المرور: ${t.pass}\n\nرابط المنصة:\n${PLATFORM_URL}\n\nبالتوفيق في رصدك!`);
+            const waLink = t.phone ? `https://wa.me/2${t.phone}?text=${msg}` : '#';
+
+            tbody.innerHTML += `
+                <tr>
+                    <td><b>${t.name}</b></td>
+                    <td>U: ${doc.id}<br>P: ${t.pass}</td>
+                    <td>
+                        <a href="${waLink}" target="_blank" class="whatsapp-btn"><i class="fab fa-whatsapp"></i></a>
+                    </td>
+                    <td>
+                        <i class="fas fa-edit edit-icon" onclick="editT('${doc.id}')"></i>
+                        <i class="fas fa-trash" style="color:red; cursor:pointer;" onclick="delT('${doc.id}')"></i>
+                    </td>
+                </tr>`;
         });
     }
 
-    function processStudentExcel(e) {
-        const reader = new FileReader();
-        reader.onload = (event) => {
-            const data = new Uint8Array(event.target.result);
-            const wb = XLSX.read(data, {type: 'array'});
-            const json = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], {header: 1});
-            excelData = json.slice(1).map(r => ({
-                sortOrder: parseInt(r[0]), name: r[1], classCode: `${parseInt(r[2])}/${parseInt(r[3])}`
-            })).filter(r => r.name);
-            document.getElementById('xl_preview').style.display = 'block';
-            const tbody = document.querySelector('#pTable tbody');
-            tbody.innerHTML = excelData.map(r => `<tr><td>${r.sortOrder}</td><td style="text-align:right">${r.name}</td><td>${r.classCode}</td></tr>`).join('');
-        };
-        reader.readAsArrayBuffer(e.target.files[0]);
+    async function editT(id) {
+        const doc = await db.collection('teachers').doc(id).get();
+        const t = doc.data();
+        document.getElementById('t_user').value = id; document.getElementById('t_user').disabled = true;
+        document.getElementById('t_name').value = t.name;
+        document.getElementById('t_pass').value = t.pass;
+        document.getElementById('t_phone').value = t.phone || '';
+        document.getElementById('t_subs').value = t.subjects.join(',');
+        document.querySelectorAll('input[name="t_cls"]').forEach(cb => cb.checked = t.classes.includes(cb.value));
+        document.getElementById('fTitle').innerText = "✏️ تعديل بيانات المعلم";
+        document.getElementById('cancelEdit').style.display = 'block';
+        window.scrollTo(0,0);
     }
 
-    async function pushStudents() {
-        if(!confirm("استبدال قاعدة البيانات الحالية؟")) return;
-        const old = await db.collection('students').get();
-        let batch = db.batch(); old.forEach(d => batch.delete(d.ref)); await batch.commit();
-        batch = db.batch(); let count = 0;
-        for (let s of excelData) {
-            batch.set(db.collection('students').doc(), s);
-            count++; if(count === 400) { await batch.commit(); batch = db.batch(); count = 0; }
-        }
-        await batch.commit(); alert("✅ تمت العملية بنجاح!"); location.reload();
+    function resetForm() {
+        document.getElementById('t_user').value = ''; document.getElementById('t_user').disabled = false;
+        document.getElementById('t_name').value = ''; document.getElementById('t_pass').value = '';
+        document.getElementById('t_phone').value = ''; document.getElementById('t_subs').value = '';
+        document.querySelectorAll('input[name="t_cls"]').forEach(cb => cb.checked = false);
+        document.getElementById('fTitle').innerText = "إضافة معلم جديد";
+        document.getElementById('cancelEdit').style.display = 'none';
     }
 
-    async function delT(id) { if(confirm("حذف المعلم؟")) { await db.collection('teachers').doc(id).delete(); renderTeachers(); } }
+    async function delT(id) { if(confirm("حذف نهائي؟")) { await db.collection('teachers').doc(id).delete(); renderTeachers(); } }
     function logout() { sessionStorage.clear(); window.location.href="index.html"; }
 </script>
 </body>
