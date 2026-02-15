@@ -2,65 +2,87 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>إدارة البيانات المطور v2026</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>إدارة البيانات v2026 - الماستر</title>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
-        :root { --primary: #0f172a; --accent: #3b82f6; --success: #10b981; --danger: #ef4444; --warning: #f59e0b; --bg: #f8fafc; }
+        :root { --primary: #0f172a; --accent: #3b82f6; --success: #10b981; --warning: #f59e0b; --danger: #ef4444; --bg: #f8fafc; }
         body { font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--bg); margin: 0; padding-bottom: 50px; }
         header { background: var(--primary); color: white; padding: 15px; text-align: center; position: sticky; top: 0; z-index: 1000; }
-        .container { max-width: 1000px; margin: 15px auto; padding: 0 10px; }
-        .panel { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 20px; }
-        input, select { padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; width: 100%; box-sizing: border-box; margin-bottom: 10px; }
-        .btn { padding: 12px 20px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; color: white; width: 100%; transition: 0.2s; }
-        .btn-add { background: var(--accent); }
-        .btn-cancel { background: #64748b; margin-top: 5px; }
-        .table-container { overflow-x: auto; margin-top: 20px; }
-        table { width: 100%; border-collapse: collapse; background: white; }
+        .container { max-width: 1100px; margin: 15px auto; padding: 0 10px; }
+        .tabs { display: flex; background: white; border-radius: 12px; margin-bottom: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); overflow: hidden; }
+        .tab-btn { flex: 1; padding: 12px; border: none; background: none; cursor: pointer; font-weight: bold; color: #64748b; transition: 0.3s; }
+        .tab-btn.active { color: var(--accent); background: #f0f7ff; border-bottom: 3px solid var(--accent); }
+        .panel { display: none; background: white; padding: 15px; border-radius: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        .panel.active { display: block; animation: fadeIn 0.3s; }
+        .form-card { background: #f1f5f9; padding: 15px; border-radius: 12px; margin-bottom: 20px; border: 1px solid #e2e8f0; }
+        .grid-inputs { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
+        input, select { padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; width: 100%; box-sizing: border-box; }
+        .btn { padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.2s; }
+        .btn-add { background: var(--accent); color: white; width: 100%; margin-top: 10px; }
+        .table-container { overflow-x: auto; margin-top: 15px; }
+        table { width: 100%; border-collapse: collapse; background: white; min-width: 600px; }
         th, td { border: 1px solid #e2e8f0; padding: 12px; text-align: center; font-size: 13px; }
         th { background: #f8fafc; color: #475569; }
-        .status-badge { padding: 4px 8px; border-radius: 12px; font-size: 10px; font-weight: bold; background: #f1f5f9; }
+        .status-badge { padding: 4px 8px; border-radius: 12px; font-size: 10px; font-weight: bold; }
         .online { background: #dcfce7; color: #166534; }
-        .action-btn { padding: 5px 10px; border-radius: 6px; border: none; color: white; cursor: pointer; font-size: 11px; margin: 0 2px; }
+        .action-btn { padding: 5px 10px; border-radius: 6px; font-size: 11px; cursor: pointer; border: none; color: white; margin: 0 2px; }
         .edit-btn { background: var(--warning); }
         .del-btn { background: var(--danger); }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
     </style>
 </head>
 <body>
 
 <header>
-    <h2>⚙️ لوحة تحكم الماستر v2026</h2>
+    <h2>⚙️ إدارة البيانات v2026 - الماستر</h2>
 </header>
 
 <div class="container">
-    <div class="panel">
-        <h3 id="formTitle">👨‍🏫 إضافة / تعديل معلم</h3>
-        <input type="text" id="t_name" placeholder="اسم المعلم">
-        <input type="text" id="t_user" placeholder="اسم المستخدم">
-        <input type="text" id="t_pass" placeholder="كلمة المرور">
-        <input type="text" id="t_subjects" placeholder="المواد (فصل بينها بفاصلة)">
-        <div id="classes_check" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap:10px; background:#f1f5f9; padding:15px; border-radius:10px; margin-bottom:10px;"></div>
-        <button class="btn btn-add" id="mainSaveBtn" onclick="saveTeacher()">حفظ بيانات المعلم 💾</button>
-        <button class="btn btn-cancel" id="cancelBtn" onclick="resetForm()" style="display:none;">إلغاء التعديل</button>
+    <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab(event, 'teachers')">👨‍🏫 المعلمون واللوج</button>
+        <button class="tab-btn" onclick="switchTab(event, 'students')">🎓 شيت الطلاب (Excel)</button>
     </div>
 
-    <div class="panel">
-        <h3>📋 سجل المعلمين والنشاط (Log)</h3>
+    <div id="teachers" class="panel active">
+        <div class="form-card">
+            <h4 id="formTitle">إضافة / تعديل معلم</h4>
+            <div class="grid-inputs">
+                <input type="text" id="t_name" placeholder="اسم المعلم الرباعي">
+                <input type="text" id="t_user" placeholder="اسم المستخدم">
+                <input type="text" id="t_pass" placeholder="كلمة المرور">
+                <input type="text" id="t_subjects" placeholder="المواد (لغة عربية, رياضيات...)">
+            </div>
+            <div style="margin-top:15px;">
+                <label>الفصول المسندة:</label>
+                <div id="classes_list" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap:8px; margin-top:8px;"></div>
+            </div>
+            <button class="btn btn-add" id="saveBtn" onclick="handleTeacherSave()">حفظ بيانات المعلم 💾</button>
+            <button class="btn" id="cancelBtn" onclick="resetForm()" style="display:none; background:#64748b; color:white; width:100%; margin-top:5px;">إلغاء التعديل</button>
+        </div>
         <div class="table-container">
             <table id="teachersTable">
-                <thead>
-                    <tr>
-                        <th>المعلم</th>
-                        <th>المستخدم / المرور</th>
-                        <th>المواد</th>
-                        <th>آخر ظهور</th>
-                        <th>الإجراءات</th>
-                    </tr>
-                </thead>
+                <thead><tr><th>المعلم</th><th>بيانات الدخول</th><th>المواد</th><th>آخر ظهور (Log)</th><th>الإجراءات</th></tr></thead>
                 <tbody></tbody>
             </table>
+        </div>
+    </div>
+
+    <div id="students" class="panel">
+        <div class="form-card" style="text-align:center; border: 2px dashed var(--accent); cursor:pointer;" onclick="document.getElementById('excel_file').click()">
+            <p id="file_status">📁 ارفع شيت الكنترول (Excel)<br><small>الترتيب: مسلسل | اسم | صف | فصل</small></p>
+            <input type="file" id="excel_file" hidden accept=".xlsx, .xls" onchange="handleExcel(event)">
+        </div>
+        <div id="previewArea" style="display:none;">
+            <button class="btn btn-add" style="background:var(--success)" onclick="uploadStudents()">اعتماد ورفع الطلاب لفايربيز 🚀</button>
+            <div class="table-container">
+                <table id="excelPreviewTable">
+                    <thead><tr><th>م</th><th>الاسم</th><th>كود الفصل الموحد</th></tr></thead>
+                    <tbody></tbody>
+                </table>
+            </div>
         </div>
     </div>
 </div>
@@ -70,109 +92,107 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
-    let isEditing = false;
+    let schoolConfig = null, excelData = [];
 
-    window.onload = async () => {
-        await loadConfig();
-        await loadTeachers();
-    };
-
-    async function loadConfig() {
+    async function init() {
         const conf = await db.collection('system').doc('config').get();
-        if(conf.exists) {
-            const data = conf.data();
-            const container = document.getElementById('classes_check');
-            container.innerHTML = '';
-            data.grades.forEach(g => {
-                g.classes.forEach(c => {
-                    const val = `${g.name} - ${c.name}`;
-                    container.innerHTML += `<label style="font-size:11px; display:flex; gap:5px;"><input type="checkbox" name="t_cls" value="${val}"> ${val}</label>`;
-                });
-            });
-        }
+        if(conf.exists) { schoolConfig = conf.data(); renderClasses(); }
+        loadTeachers();
     }
 
-    async function loadTeachers() {
-        const tbody = document.querySelector('#teachersTable tbody');
-        tbody.innerHTML = '<tr><td colspan="5">⏳ جاري تحميل البيانات...</td></tr>';
-        
-        try {
-            const snap = await db.collection('teachers').get();
-            tbody.innerHTML = '';
-            snap.forEach(doc => {
-                const t = doc.data();
-                const lastLogin = t.lastLogin ? new Date(t.lastLogin).toLocaleString('ar-EG') : 'لم يدخل بعد';
-                tbody.innerHTML += `
-                    <tr>
-                        <td><b>${t.name}</b></td>
-                        <td>U: ${doc.id}<br>P: ${t.pass}</td>
-                        <td>${t.subjects ? t.subjects.join(', ') : '-'}</td>
-                        <td><span class="status-badge ${t.lastLogin ? 'online' : ''}">${lastLogin}</span></td>
-                        <td>
-                            <button class="action-btn edit-btn" onclick="editTeacher('${doc.id}')">تعديل</button>
-                            <button class="action-btn del-btn" onclick="deleteTeacher('${doc.id}')">حذف</button>
-                        </td>
-                    </tr>`;
-            });
-        } catch (e) { tbody.innerHTML = '<tr><td colspan="5">❌ فشل تحميل البيانات</td></tr>'; }
+    function switchTab(e, id) {
+        document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
+        e.currentTarget.classList.add('active');
     }
 
-    async function saveTeacher() {
+    function renderClasses() {
+        const container = document.getElementById('classes_list');
+        container.innerHTML = '';
+        schoolConfig.grades.forEach(g => {
+            g.classes.forEach(c => {
+                const val = `${g.name} - ${c.name}`;
+                container.innerHTML += `<label style="font-size:11px;"><input type="checkbox" name="t_cls" value="${val}"> ${val}</label>`;
+            });
+        });
+    }
+
+    async function handleTeacherSave() {
         const user = document.getElementById('t_user').value.trim();
         const name = document.getElementById('t_name').value.trim();
         const pass = document.getElementById('t_pass').value.trim();
-        const subs = document.getElementById('t_subjects').value.split(',').map(s => s.trim());
-        const clss = Array.from(document.querySelectorAll('input[name="t_cls"]:checked')).map(c => c.value);
+        const subjects = document.getElementById('t_subjects').value.split(',').map(s => s.trim());
+        const classes = Array.from(document.querySelectorAll('input[name="t_cls"]:checked')).map(c => c.value);
+        if(!user || !name) return alert("أكمل البيانات");
+        await db.collection('teachers').doc(user).set({ name, pass, subjects, classes, role: 'teacher', updatedAt: Date.now() }, {merge: true});
+        alert("✅ تم الحفظ");
+        resetForm(); loadTeachers();
+    }
 
-        if(!user || !name || !pass) return alert("يرجى إكمال البيانات الأساسية");
-
-        await db.collection('teachers').doc(user).set({
-            name, pass, subjects: subs, classes: clss, role: 'teacher', updatedAt: Date.now()
-        }, {merge: true});
-
-        alert("✅ تم الحفظ بنجاح");
-        resetForm();
-        loadTeachers();
+    async function loadTeachers() {
+        const snap = await db.collection('teachers').get();
+        const tbody = document.querySelector('#teachersTable tbody');
+        tbody.innerHTML = '';
+        snap.forEach(doc => {
+            const t = doc.data();
+            const log = t.lastLogin ? new Date(t.lastLogin).toLocaleString('ar-EG') : 'لم يدخل';
+            tbody.innerHTML += `<tr><td><b>${t.name}</b></td><td>U: ${doc.id}<br>P: ${t.pass}</td><td>${t.subjects.join(', ')}</td><td><span class="status-badge ${t.lastLogin?'online':''}">${log}</span></td><td><button class="action-btn edit-btn" onclick="editTeacher('${doc.id}')">تعديل</button><button class="action-btn del-btn" onclick="deleteTeacher('${doc.id}')">حذف</button></td></tr>`;
+        });
     }
 
     async function editTeacher(id) {
         const doc = await db.collection('teachers').doc(id).get();
         const t = doc.data();
-        
-        document.getElementById('t_user').value = id;
-        document.getElementById('t_user').disabled = true;
-        document.getElementById('t_name').value = t.name;
-        document.getElementById('t_pass').value = t.pass;
-        document.getElementById('t_subjects').value = t.subjects ? t.subjects.join(', ') : '';
-        
-        document.querySelectorAll('input[name="t_cls"]').forEach(cb => {
-            cb.checked = t.classes && t.classes.includes(cb.value);
-        });
-
-        document.getElementById('formTitle').innerText = "✏️ تعديل بيانات: " + t.name;
-        document.getElementById('mainSaveBtn').innerText = "تحديث البيانات 🔄";
+        document.getElementById('t_user').value = id; document.getElementById('t_user').disabled = true;
+        document.getElementById('t_name').value = t.name; document.getElementById('t_pass').value = t.pass;
+        document.getElementById('t_subjects').value = t.subjects.join(', ');
+        document.querySelectorAll('input[name="t_cls"]').forEach(cb => cb.checked = t.classes.includes(cb.value));
+        document.getElementById('formTitle').innerText = "تعديل بيانات المعلم";
         document.getElementById('cancelBtn').style.display = 'block';
-        window.scrollTo({top: 0, behavior: 'smooth'});
     }
 
     function resetForm() {
-        document.getElementById('t_user').value = '';
-        document.getElementById('t_user').disabled = false;
-        document.getElementById('t_name').value = '';
-        document.getElementById('t_pass').value = '';
-        document.getElementById('t_subjects').value = '';
-        document.querySelectorAll('input[name="t_cls"]').forEach(cb => cb.checked = false);
-        document.getElementById('formTitle').innerText = "👨‍🏫 إضافة / تعديل معلم";
-        document.getElementById('mainSaveBtn').innerText = "حفظ بيانات المعلم 💾";
-        document.getElementById('cancelBtn').style.display = 'none';
+        document.getElementById('t_user').value = ''; document.getElementById('t_user').disabled = false;
+        document.getElementById('t_name').value = ''; document.getElementById('t_pass').value = '';
+        document.getElementById('t_subjects').value = ''; document.querySelectorAll('input[name="t_cls"]').forEach(cb => cb.checked = false);
+        document.getElementById('formTitle').innerText = "إضافة معلم جديد"; document.getElementById('cancelBtn').style.display = 'none';
     }
 
-    async function deleteTeacher(id) {
-        if(confirm("هل أنت متأكد من حذف هذا المعلم نهائياً؟")) {
-            await db.collection('teachers').doc(id).delete();
-            loadTeachers();
-        }
+    function handleExcel(e) {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            const data = new Uint8Array(event.target.result);
+            const wb = XLSX.read(data, {type: 'array'});
+            const json = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], {header: 1});
+            excelData = json.slice(1).map(r => ({
+                sortOrder: parseInt(r[0]), name: r[1], classCode: `${parseInt(r[2])}/${parseInt(r[3])}`
+            })).filter(r => r.name);
+            renderExcelPreview();
+        };
+        reader.readAsArrayBuffer(e.target.files[0]);
     }
+
+    function renderExcelPreview() {
+        document.getElementById('previewArea').style.display = 'block';
+        const tbody = document.querySelector('#excelPreviewTable tbody');
+        tbody.innerHTML = excelData.map(r => `<tr><td>${r.sortOrder}</td><td style="text-align:right">${r.name}</td><td>${r.classCode}</td></tr>`).join('');
+    }
+
+    async function uploadStudents() {
+        if(!confirm("استبدال قائمة الطلاب؟")) return;
+        const old = await db.collection('students').get();
+        let batch = db.batch(); old.forEach(d => batch.delete(d.ref)); await batch.commit();
+        batch = db.batch(); let count = 0;
+        for (let s of excelData) {
+            batch.set(db.collection('students').doc(), s);
+            count++; if(count === 400) { await batch.commit(); batch = db.batch(); count = 0; }
+        }
+        await batch.commit(); alert("✅ تمت العملية بنجاح!"); location.reload();
+    }
+
+    async function deleteTeacher(id) { if(confirm("حذف المعلم؟")) { await db.collection('teachers').doc(id).delete(); loadTeachers(); } }
+    window.onload = init;
 </script>
 </body>
 </html>
