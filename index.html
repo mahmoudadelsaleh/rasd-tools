@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Academic Portal | Secured Login</title>
+    <title>University Portal | Secured Login</title>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
     <style>
@@ -34,7 +34,7 @@
         }
         button:active { transform: scale(0.98); }
         .welcome-ov { display: none; font-size: 22px; font-weight: bold; color: var(--navy); animation: fadeIn 0.5s; }
-        #msg { color: #b91c1c; margin-top: 15px; font-size: 14px; font-weight: bold; }
+        #msg { color: #b91c1c; margin-top: 15px; font-size: 14px; font-weight: bold; min-height: 20px; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
     </style>
 </head>
@@ -55,7 +55,7 @@
     </div>
 
 <script>
-    // إعدادات فايربيز الخاصة بك
+    // إعدادات فايربيز (تأكد من مطابقتها لمشروعك)
     const firebaseConfig = { 
         apiKey: "AIzaSyBePGZiqMPmZQdg36jZ4Rkdtd7OISxmob8", 
         projectId: "rasd-tools" 
@@ -64,51 +64,57 @@
     const db = firebase.firestore();
 
     async function handleLogin() {
-        const u = document.getElementById('user').value.trim();
-        const p = document.getElementById('pass').value.trim();
+        const uInput = document.getElementById('user').value.trim();
+        const pInput = document.getElementById('pass').value.trim();
         const msg = document.getElementById('msg');
         
-        if(!u || !p) {
+        if(!uInput || !pInput) {
             msg.innerText = "⚠️ يرجى إدخال البيانات كاملة";
             return;
         }
 
         msg.innerText = "⏳ جاري التحقق من الهوية...";
-        sessionStorage.clear(); // تنظيف أي جلسات سابقة فوراً
+        sessionStorage.clear(); // تنظيف الجلسة القديمة
 
         try {
-            // 1. فحص مجموعة المديرين (Admins)
-            const adminDoc = await db.collection('admins').doc(u).get();
+            // 1. البحث في مجموعة المديرين (admins) عن طريق حقل username
+            const adminQuery = await db.collection('admins').where('username', '==', uInput).get();
             
-            if(adminDoc.exists && adminDoc.data().pass === p) {
-                const adminData = adminDoc.data();
-                // تخزين البيانات في الجلسة
-                sessionStorage.setItem('userEmail', u);
-                sessionStorage.setItem('userName', adminData.name);
-                sessionStorage.setItem('userRole', adminData.role || 'super_admin');
+            if(!adminQuery.empty) {
+                const adminData = adminQuery.docs[0].data();
                 
-                loginSuccess("school-setup.html", adminData.name);
-                return;
+                // التأكد من وجود حقل pass في الوثيقة ومطابقته
+                if(adminData.pass && adminData.pass === pInput) {
+                    sessionStorage.setItem('userEmail', uInput);
+                    sessionStorage.setItem('userName', adminData.name);
+                    sessionStorage.setItem('userRole', adminData.role || 'super_admin');
+                    
+                    loginSuccess("school-setup.html", adminData.name);
+                    return;
+                }
             } 
 
-            // 2. إذا لم يكن مديراً، فحص مجموعة المعلمين (Teachers)
-            const teacherDoc = await db.collection('teachers').doc(u).get();
-            if(teacherDoc.exists && teacherDoc.data().pass === p) {
+            // 2. إذا لم يجد مديراً، يبحث في مجموعة المعلمين (teachers)
+            // ملاحظة: هنا استخدمنا doc(uInput) لأننا سجلنا المعلمين بمعرف الوثيقة نفسه
+            const teacherDoc = await db.collection('teachers').doc(uInput).get();
+            if(teacherDoc.exists) {
                 const tData = teacherDoc.data();
-                sessionStorage.setItem('userEmail', u);
-                sessionStorage.setItem('userName', tData.name);
-                sessionStorage.setItem('userRole', 'teacher');
-                
-                loginSuccess("teacher-panel.html", tData.name);
-                return;
+                if(tData.pass === pInput) {
+                    sessionStorage.setItem('userEmail', uInput);
+                    sessionStorage.setItem('userName', tData.name);
+                    sessionStorage.setItem('userRole', 'teacher');
+                    
+                    loginSuccess("teacher-panel.html", tData.name);
+                    return;
+                }
             }
 
-            // 3. في حال فشل كل المحاولات
+            // 3. في حالة عدم التطابق
             msg.innerText = "❌ اسم المستخدم أو كلمة المرور غير صحيحة";
 
         } catch (error) {
             console.error("Login Error:", error);
-            msg.innerText = "📡 حدث خطأ في الاتصال بالقاعدة.. جرب ثانية";
+            msg.innerText = "📡 فشل الاتصال.. تأكد من قواعد البيانات (Rules)";
         }
     }
 
@@ -118,7 +124,6 @@
         w.innerHTML = `👋 مرحباً بك<br><span style="color:var(--gold)">${name}</span>`;
         w.style.display = 'block';
         
-        // التوجيه التلقائي بعد 1.2 ثانية
         setTimeout(() => window.location.href = target, 1200);
     }
 </script>
