@@ -3,31 +3,37 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>دخول الماستر - نظام الخدمة 2026</title>
+    <title>تسجيل الدخول - نظام الخدمة 2026</title>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; background: #0f172a; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; color: white; }
-        .login-card { background: #1e293b; padding: 30px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); width: 100%; max-width: 350px; text-align: center; }
-        input { width: 100%; padding: 12px; margin: 10px 0; border-radius: 10px; border: 1px solid #334155; background: #0f172a; color: white; box-sizing: border-box; }
-        button { width: 100%; padding: 12px; border-radius: 10px; border: none; background: #3b82f6; color: white; font-weight: bold; cursor: pointer; transition: 0.3s; }
+        :root { --primary: #0f172a; --accent: #3b82f6; --bg: #f1f5f9; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .login-card { background: white; padding: 30px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); width: 100%; max-width: 380px; text-align: center; }
+        h2 { color: var(--primary); margin-bottom: 20px; }
+        input { width: 100%; padding: 12px; margin: 10px 0; border-radius: 10px; border: 1px solid #cbd5e1; box-sizing: border-box; font-size: 16px; }
+        button { width: 100%; padding: 12px; border-radius: 10px; border: none; background: var(--accent); color: white; font-weight: bold; cursor: pointer; font-size: 16px; transition: 0.3s; }
         button:hover { background: #2563eb; }
-        .error { color: #ef4444; font-size: 14px; margin-top: 10px; display: none; }
+        #msg { margin-top: 15px; font-size: 14px; min-height: 20px; }
+        .error { color: #ef4444; }
+        .success { color: #10b981; }
     </style>
 </head>
 <body>
 
 <div class="login-card">
-    <h2>🔐 دخول الماستر</h2>
-    <p>نظام الرصد الذكي v2.0</p>
-    <input type="text" id="username" placeholder="اسم المستخدم">
-    <input type="password" id="password" placeholder="كلمة المرور">
-    <button onclick="login()">دخول النظام</button>
-    <div id="errMsg" class="error">بيانات الدخول غير صحيحة!</div>
+    <h2>🔐 تسجيل دخول النظام</h2>
+    <p style="color: #64748b; font-size: 14px; margin-bottom: 20px;">مشروع الخدمة - الرصد الذكي</p>
+    
+    <input type="text" id="user" placeholder="اسم المستخدم">
+    <input type="password" id="pass" placeholder="كلمة المرور">
+    
+    <button onclick="handleLogin()">دخول النظام</button>
+    <div id="msg"></div>
 </div>
 
 <script>
-    // إعدادات فايربيز الخاصة بك (rasd-tools)
+    // إعدادات فايربيز (نفس بيانات مشروعك المعتمدة)
     const firebaseConfig = {
         apiKey: "AIzaSyBePGZiqMPmZQdg36jZ4Rkdtd7OISxmob8",
         authDomain: "rasd-tools.firebaseapp.com",
@@ -36,26 +42,53 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
-    async function login() {
-        const user = document.getElementById('username').value;
-        const pass = document.getElementById('password').value;
-        const errMsg = document.getElementById('errMsg');
+    async function handleLogin() {
+        const user = document.getElementById('user').value.trim();
+        const pass = document.getElementById('pass').value.trim();
+        const msg = document.getElementById('msg');
+        
+        msg.className = "";
+        msg.innerText = "⏳ جاري التحقق...";
 
-        // التحقق من بيانات الماستر التي طلبتها
+        // 1. التحقق أولاً من حساب الماستر (أنت)
         if (user === "almas2021" && pass === "790707071") {
-            sessionStorage.setItem('isAdmin', 'true');
+            sessionStorage.setItem('userEmail', user);
             sessionStorage.setItem('role', 'super_admin');
-            
-            // تخزين بيانات المدير في فايربيز للتأكد من وجودها دائماً
-            await db.collection('admins').doc('master').set({
-                username: user,
-                role: 'super_admin',
-                lastLogin: new Date()
-            });
+            msg.className = "success";
+            msg.innerText = "✅ أهلاً بك يا ماستر.. جاري التوجيه";
+            setTimeout(() => window.location.href = "school-setup.html", 1000);
+            return;
+        }
 
-            window.location.href = "school-setup.html"; // التوجه لصفحة الإعدادات
-        } else {
-            errMsg.style.display = 'block';
+        // 2. التحقق من حسابات المعلمين في فايربيز
+        try {
+            const doc = await db.collection('teachers').doc(user).get();
+            
+            if (doc.exists) {
+                const data = doc.data();
+                if (data.pass === pass) {
+                    // تحديث "اللوج" (سجل النشاط) فور الدخول كما طلبت
+                    await db.collection('teachers').doc(user).update({
+                        lastLogin: Date.now()
+                    });
+
+                    sessionStorage.setItem('userEmail', user);
+                    sessionStorage.setItem('role', 'teacher');
+                    
+                    msg.className = "success";
+                    msg.innerText = `✅ مرحباً أ/ ${data.name}`;
+                    setTimeout(() => window.location.href = "teacher-panel.html", 1000);
+                } else {
+                    msg.className = "error";
+                    msg.innerText = "❌ كلمة المرور غير صحيحة";
+                }
+            } else {
+                msg.className = "error";
+                msg.innerText = "❌ اسم المستخدم غير موجود";
+            }
+        } catch (e) {
+            msg.className = "error";
+            msg.innerText = "📡 خطأ في الاتصال بالقاعدة";
         }
     }
 </script>
