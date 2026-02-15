@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>إعدادات النظام - مشروع الخدمة</title>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
+    <style>
+        :root { --primary: #1e293b; --accent: #3b82f6; --bg: #f1f5f9; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; }
+        header { background: var(--primary); color: white; padding: 15px; text-align: center; position: sticky; top: 0; z-index: 100; }
+        .container { max-width: 800px; margin: 20px auto; padding: 10px; }
+        
+        /* نظام التبويبات */
+        .setup-tabs { display: flex; overflow-x: auto; background: white; border-bottom: 2px solid #e2e8f0; margin-bottom: 20px; }
+        .tab-link { padding: 15px 20px; cursor: pointer; border: none; background: none; font-weight: bold; white-space: nowrap; color: #64748b; }
+        .tab-link.active { color: var(--accent); border-bottom: 3px solid var(--accent); }
+
+        .setup-panel { display: none; background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+        .setup-panel.active { display: block; }
+
+        .form-group { margin-bottom: 20px; }
+        label { display: block; font-weight: bold; margin-bottom: 8px; color: #334155; }
+        input, textarea, select { width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px; box-sizing: border-box; }
+        
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .btn-save { background: var(--accent); color: white; border: none; padding: 15px; border-radius: 8px; width: 100%; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 20px; }
+        
+        .section-title { border-right: 4px solid var(--accent); padding-right: 10px; margin: 25px 0 15px; color: var(--primary); }
+    </style>
+</head>
+<body>
+
+<header>
+    <h2>⚙️ لوحة تحكم الماستر - إعدادات المشروع</h2>
+</header>
+
+<div class="container">
+    <div class="setup-tabs">
+        <button class="tab-link active" onclick="showTab(event, 'basic')">🏫 بيانات المدرسة</button>
+        <button class="tab-link" onclick="showTab(event, 'structure')">🏗️ الهيكل الإداري</button>
+        <button class="tab-link" onclick="showTab(event, 'grading')">📊 نظام الرصد</button>
+        <button class="tab-link" onclick="showTab(event, 'control')">🔒 الأقفال</button>
+    </div>
+
+    <div id="basic" class="setup-panel active">
+        <h3 class="section-title">البيانات التعريفية</h3>
+        <div class="form-group">
+            <label>اسم المدرسة كاملاً:</label>
+            <input type="text" id="schoolName" placeholder="مثال: مدرسة المحمودية الثانوية بنين">
+        </div>
+        <div class="form-group">
+            <label>كلمة مدير المدرسة:</label>
+            <textarea id="principalWord" rows="3"></textarea>
+        </div>
+        <div class="form-group">
+            <label>كلمة رئيس الكنترول والقائم بالرصد:</label>
+            <textarea id="controlWord" rows="3"></textarea>
+        </div>
+        <button class="btn-save" onclick="saveBasicInfo()">حفظ البيانات الأساسية</button>
+    </div>
+
+    <div id="structure" class="setup-panel">
+        <h3 class="section-title">تنظيم الصفوف والفصول</h3>
+        <div class="form-group">
+            <label>عدد الصفوف الدراسية:</label>
+            <input type="number" id="gradesCount" value="3">
+        </div>
+        <div id="gradesDetails">
+            </div>
+        <button class="btn-save" onclick="saveStructure()">حفظ هيكل المدرسة</button>
+    </div>
+
+    <div id="grading" class="setup-panel">
+        <h3 class="section-title">تخطيط التقييم الأسبوعي</h3>
+        <div class="grid-2">
+            <div class="form-group">
+                <label>عدد أسابيع الفصل:</label>
+                <input type="number" id="weeksCount" value="14">
+            </div>
+            <div class="form-group">
+                <label>عدد الاختبارات الشهرية:</label>
+                <input type="number" id="examsCount" value="2">
+            </div>
+        </div>
+
+        <h3 class="section-title">حدود درجات الرصد (العظمى)</h3>
+        <div class="grid-2">
+            <div class="form-group"><label>التقييم (ت):</label><input type="number" id="maxT" value="15"></div>
+            <div class="form-group"><label>الواجب (و):</label><input type="number" id="maxV" value="15"></div>
+            <div class="form-group"><label>السلوك (س):</label><input type="number" id="maxS" value="10"></div>
+            <div class="form-group"><label>الاختبار (اخ):</label><input type="number" id="maxExam" value="30"></div>
+        </div>
+        <button class="btn-save" onclick="saveGradingSystem()">حفظ نظام الرصد</button>
+    </div>
+
+    <div id="control" class="setup-panel">
+        <h3 class="section-title">إتاحة وإغلاق الرصد</h3>
+        <p>تحكم في الفترات التي يُسمح للمعلمين بالرصد فيها:</p>
+        <div id="locksContainer" class="grid-2">
+            </div>
+        <button class="btn-save" onclick="saveLocks()">تحديث حالة الأقفال</button>
+    </div>
+</div>
+
+<script>
+    // إعدادات فايربيز (استخدام نفس إعداداتك السابقة)
+    const firebaseConfig = {
+        apiKey: "AIzaSyBePGZiqMPmZQdg36jZ4Rkdtd7OISxmob8",
+        authDomain: "rasd-tools.firebaseapp.com",
+        projectId: "rasd-tools"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    function showTab(evt, tabId) {
+        document.querySelectorAll('.setup-panel').forEach(p => p.classList.remove('active'));
+        document.querySelectorAll('.tab-link').forEach(l => l.classList.remove('active'));
+        document.getElementById(tabId).classList.add('active');
+        evt.currentTarget.classList.add('active');
+    }
+
+    // وظائف الحفظ (سنكمل منطق الربط مع فايربيز في الخطوة القادمة)
+    async function saveBasicInfo() {
+        const data = {
+            name: document.getElementById('schoolName').value,
+            principalWord: document.getElementById('principalWord').value,
+            controlWord: document.getElementById('controlWord').value
+        };
+        await db.collection('system').doc('schoolInfo').set(data);
+        alert("✅ تم حفظ بيانات المدرسة");
+    }
+
+    // منطق توليد الفصول والأقفال سيتم إضافته ليعمل ديناميكياً
+</script>
+</body>
+</html>
