@@ -3,57 +3,59 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>كنترول الرصد الذكي | v2026</title>
+    <title>Master Control Hub v2026</title>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
         :root { --navy: #0a192f; --gold: #c5a059; --bg: #f8fafc; }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; }
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--bg); margin: 0; }
         .academic-header { background: var(--navy); color: white; padding: 15px 20px; border-bottom: 3px solid var(--gold); display: flex; justify-content: space-between; align-items: center; }
-        .container { padding: 15px; max-width: 1400px; margin: auto; }
+        .container { padding: 15px; max-width: 1450px; margin: auto; }
         .card { background: white; border-radius: 12px; padding: 20px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border-right: 5px solid var(--gold); }
         .grid-filters { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; margin-bottom: 15px; }
-        select { padding: 10px; border: 1px solid #e2e8f0; border-radius: 8px; }
-        .btn-action { padding: 12px; background: var(--navy); color: var(--gold); border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
-        .table-wrap { overflow-x: auto; background: white; border-radius: 12px; border: 1px solid #e2e8f0; max-height: 600px; }
+        select { padding: 10px; border: 1px solid #e2e8f0; border-radius: 8px; font-weight: bold; }
+        .btn-action { padding: 12px; background: var(--navy); color: var(--gold); border: none; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.3s; }
+        .table-wrap { overflow-x: auto; background: white; border-radius: 12px; border: 1px solid #e2e8f0; max-height: 700px; }
         table { width: 100%; border-collapse: collapse; font-size: 11px; text-align: center; }
-        th { background: #f1f5f9; position: sticky; top: 0; z-index: 10; padding: 10px; border: 1px solid #cbd5e1; }
-        td { border: 1px solid #e2e8f0; padding: 5px; }
-        .sub-header { background: #fdf2f2; font-weight: bold; }
-        .main-total { background: #fffbeb; font-weight: bold; }
+        th { background: #f1f5f9; position: sticky; top: 0; z-index: 10; padding: 10px; border: 1px solid #cbd5e1; white-space: nowrap; }
+        td { border: 1px solid #e2e8f0; padding: 8px; }
+        .type-badge { padding: 2px 8px; border-radius: 10px; font-size: 10px; color: white; }
+        .sci { background: #0369a1; } .lit { background: #b91c1c; }
     </style>
 </head>
 <body>
 
     <header class="academic-header">
-        <div style="font-weight: bold;">📊 مركز استخراج تقارير الكنترول</div>
-        <div class="nav-links">
-            <a href="manage-data.html" style="color:white; text-decoration:none;">العودة للإدارة</a>
-        </div>
+        <div style="font-size: 18px; font-weight: 800;">🏛️ نظام استخراج شيتات الكنترول الموحدة</div>
+        <a href="manage-data.html" style="color:var(--gold); text-decoration:none; font-weight:bold;">العودة للإدارة ⬅️</a>
     </header>
 
     <div class="container">
         <div class="card">
-            <h3>⚙️ معايير التصدير لشيت الكنترول</h3>
+            <h3>⚙️ تحديد نطاق التقرير</h3>
             <div class="grid-filters">
-                <select id="repGrade" onchange="updateClassList()"><option value="">اختر الصف...</option></select>
+                <select id="repGrade" onchange="updateFilters()"><option value="">اختر الصف...</option></select>
                 <select id="repClass"><option value="">كل الفصول</option></select>
+                <select id="repType">
+                    <option value="all">كل التخصصات</option>
+                    <option value="علمي">قسم علمي فقط</option>
+                    <option value="أدبي">قسم أدبي فقط</option>
+                </select>
                 <select id="repPeriod">
+                    <option value="full">التقرير الشامل (كل المواد والأسابيع)</option>
                     <option value="p1">الفترة الأولى (1-7)</option>
                     <option value="p2">الفترة الثانية (8-14)</option>
-                    <option value="full">التقرير الشامل (كل المواد)</option>
                 </select>
-                <select id="repSubject"><option value="">المادة (اختياري للفترات)</option></select>
             </div>
-            <button class="btn-action" style="width:100%" onclick="generateReport()">توليد ومعاينة التقرير 🔍</button>
-            <button class="btn-action" style="width:100%; margin-top:10px; background:#065f46; color:white;" onclick="exportExcel()">تصدير ملف Excel للكنترول 📥</button>
+            <button class="btn-action" style="width:100%" onclick="generateProReport()">توليد تقرير الكنترول المخصص 🔍</button>
+            <button class="btn-action" style="width:100%; margin-top:10px; background:#065f46; color:white;" onclick="exportProExcel()">تصدير Excel RTL 📥</button>
         </div>
 
         <div class="table-wrap">
-            <table id="controlTable">
-                <thead id="controlHead"></thead>
-                <tbody id="controlBody"></tbody>
+            <table id="masterControlTable">
+                <thead id="mHead"></thead>
+                <tbody id="mBody"></tbody>
             </table>
         </div>
     </div>
@@ -63,116 +65,85 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
-    let schoolConfig = {}, allSubjects = [];
+    let sysConfig = {};
+    // ترتيب المواد المعتمد
+    const subjectsOrder = ["لغة عربية", "تربية دينية", "لغة إنجليزية", "رياضيات", "فيزياء", "كيمياء", "أحياء", "تاريخ", "جغرافيا", "فلسفة"];
 
     window.onload = async () => {
         const doc = await db.collection('system').doc('config').get();
         if(doc.exists) {
-            schoolConfig = doc.data();
-            schoolConfig.grades.forEach(g => document.getElementById('repGrade').innerHTML += `<option value="${g.name}">${g.name}</option>`);
+            sysConfig = doc.data();
+            sysConfig.grades.forEach(g => document.getElementById('repGrade').innerHTML += `<option value="${g.name}">${g.name}</option>`);
         }
-        // جلب قائمة المواد
-        const tSnap = await db.collection('teachers').get();
-        let sSet = new Set();
-        tSnap.forEach(t => t.data().subjects.forEach(s => sSet.add(s)));
-        allSubjects = Array.from(sSet);
-        allSubjects.forEach(s => document.getElementById('repSubject').innerHTML += `<option value="${s}">${s}</option>`);
     };
 
-    function updateClassList() {
+    function updateFilters() {
         const gName = document.getElementById('repGrade').value;
         const cSel = document.getElementById('repClass');
         cSel.innerHTML = '<option value="">كل الفصول</option>';
-        const grade = schoolConfig.grades.find(g => g.name === gName);
+        const grade = sysConfig.grades.find(g => g.name === gName);
         if(grade) grade.classes.forEach(c => cSel.innerHTML += `<option value="${c.name}">${c.name}</option>`);
     }
 
-    async function generateReport() {
+    async function generateProReport() {
         const grade = document.getElementById('repGrade').value;
         const cls = document.getElementById('repClass').value;
+        const type = document.getElementById('repType').value;
         const period = document.getElementById('repPeriod').value;
-        const selectedSub = document.getElementById('repSubject').value;
 
-        if(!grade) return alert("اختر الصف أولاً");
+        if(!grade) return alert("يرجى اختيار الصف");
 
-        // جلب الطلاب
+        // جلب الطلاب والدرجات
         const gNum = grade.match(/\d+/)[0];
-        let sSnap = await db.collection('students').get();
+        const sSnap = await db.collection('students').get();
         let students = sSnap.docs.map(d => ({id:d.id, ...d.data()}))
                             .filter(s => s.classCode.startsWith(gNum + '/'))
                             .sort((a,b) => a.sortOrder - b.sortOrder);
+        
         if(cls) students = students.filter(s => s.classCode === cls);
-
-        // جلب الدرجات
+        
         const gSnap = await db.collection('grades').get();
         const grades = gSnap.docs.map(d => d.data());
 
-        if(period === 'full') renderFullReport(students, grades);
-        else renderPeriodReport(students, grades, period, selectedSub);
+        renderTable(students, grades, grade, type);
     }
 
-    // تقرير الفترة (أسبوعي + سلوك + متوسطات)
-    function renderPeriodReport(students, grades, period, sub) {
-        const head = document.getElementById('controlHead');
-        const weeks = (period === 'p1') ? ['w1','w2','w3','w4','w5','w6','w7'] : ['w8','w9','w10','w11','w12','w13','w14'];
-        const examWeek = (period === 'p1') ? 'ex1' : 'ex2';
-
-        let h1 = `<tr><th rowspan="2">م</th><th rowspan="2">اسم الطالب</th><th rowspan="2">الفصل</th>`;
-        let h2 = `<tr>`;
+    function renderTable(students, grades, gradeName, filterType) {
+        const head = document.getElementById('mHead');
+        const body = document.getElementById('mBody');
         
-        weeks.forEach(w => {
-            h1 += `<th colspan="3">أسبوع ${w.substring(1)}</th>`;
-            h2 += `<th>ت</th><th>و</th><th>س</th>`;
-        });
-        
-        h1 += `<th colspan="4" class="main-total">المتوسطات</th><th rowspan="2">الاختبار</th></tr>`;
-        h2 += `<th class="main-total">ت</th><th class="main-total">و</th><th class="main-total">س</th><th class="main-total">المجموع</th></tr>`;
-        
-        head.innerHTML = h1 + h2;
-
-        document.getElementById('controlBody').innerHTML = students.map(s => {
-            let sGrades = grades.filter(g => g.sid === s.id && g.subject === sub);
-            let row = `<td>${s.sortOrder}</td><td style="text-align:right">${s.name}</td><td>${s.classCode}</td>`;
-            
-            let sumT=0, sumV=0, sumS=0, count=0;
-            weeks.forEach(w => {
-                let wt = sGrades.find(g => g.week === w && g.type === 't')?.score || 0;
-                let wv = sGrades.find(g => g.week === w && g.type === 'v')?.score || 0;
-                let ws = sGrades.find(g => g.week === w && g.type === 's')?.score || 0;
-                row += `<td>${wt||'-'}</td><td>${wv||'-'}</td><td>${ws||'-'}</td>`;
-                if(wt>0||wv>0) { sumT+=wt; sumV+=wv; sumS+=ws; count++; }
-            });
-
-            let aT = count>0 ? (sumT/count).toFixed(1) : 0;
-            let aV = count>0 ? (sumV/count).toFixed(1) : 0;
-            let aS = count>0 ? (sumS/count).toFixed(1) : 0;
-            let exam = sGrades.find(g => g.week === examWeek)?.score || 0;
-            
-            row += `<td class="main-total">${aT}</td><td class="main-total">${aV}</td><td class="main-total">${aS}</td><td class="main-total">${(parseFloat(aT)+parseFloat(aV)+parseFloat(aS)).toFixed(1)}</td><td>${exam}</td>`;
-            return `<tr>${row}</tr>`;
-        }).join('');
-    }
-
-    // التقرير الشامل (لكل المواد - 6 أعمدة لكل مادة)
-    function renderFullReport(students, grades) {
-        const head = document.getElementById('controlHead');
-        let h1 = `<tr><th rowspan="2">م</th><th rowspan="2">اسم الطالب</th><th rowspan="2">الفصل</th>`;
-        let h2 = `<tr>`;
-
-        allSubjects.forEach(s => {
-            h1 += `<th colspan="6" style="background:var(--gold); color:var(--navy)">${s}</th>`;
-            h2 += `<th>متوسط ت</th><th>متوسط و</th><th>متوسط س</th><th>مجموع م.</th><th>اختبار</th><th>نهائي</th>`;
+        // تصفية المواد حسب الصف والتخصص
+        let activeSubjects = subjectsOrder.filter(s => {
+            if(gradeName.includes("1")) {
+                // مواد الصف الأول (مثال: بدون تخصص)
+                return !["فلسفة"].includes(s); 
+            } else {
+                // مواد الصف الثاني (علمي/أدبي)
+                if(filterType === "علمي") return !["تاريخ", "جغرافيا", "فلسفة"].includes(s);
+                if(filterType === "أدبي") return !["فيزياء", "كيمياء", "أحياء"].includes(s);
+            }
+            return true;
         });
 
+        let h1 = `<tr><th rowspan="2">م</th><th rowspan="2">الاسم</th><th rowspan="2">الفصل</th>`;
+        let h2 = `<tr>`;
+
+        activeSubjects.forEach(sub => {
+            h1 += `<th colspan="6" style="background:#fdf2f2">${sub}</th>`;
+            h2 += `<th>م. ت</th><th>م. و</th><th>م. س</th><th>م. عام</th><th>اختبار</th><th>نهائي</th>`;
+        });
         head.innerHTML = h1 + `</tr>` + h2 + `</tr>`;
 
-        document.getElementById('controlBody').innerHTML = students.map(st => {
+        body.innerHTML = students.map(st => {
+            // التحقق من تخصص الطالب برمجياً من كود فصله (صياعة برمجية)
+            // إذا كان الفصل 2/1 أو 2/2 مثلاً (علمي) و 2/3 (أدبي)
             let row = `<td>${st.sortOrder}</td><td style="text-align:right">${st.name}</td><td>${st.classCode}</td>`;
             
-            allSubjects.forEach(sub => {
+            activeSubjects.forEach(sub => {
                 let sGrades = grades.filter(g => g.sid === st.id && g.subject === sub);
                 let sumT=0, sumV=0, sumS=0, count=0;
-                // حساب متوسط العام (14 أسبوع)
+                
+                // حساب المتوسط لـ 14 أسبوع
                 for(let i=1; i<=14; i++){
                     let w = 'w'+i;
                     let wt = sGrades.find(g => g.week === w && g.type === 't')?.score || 0;
@@ -180,26 +151,28 @@
                     let ws = sGrades.find(g => g.week === w && g.type === 's')?.score || 0;
                     if(wt>0||wv>0) { sumT+=wt; sumV+=wv; sumS+=ws; count++; }
                 }
+                
                 let aT = count>0 ? (sumT/count).toFixed(1) : 0;
                 let aV = count>0 ? (sumV/count).toFixed(1) : 0;
                 let aS = count>0 ? (sumS/count).toFixed(1) : 0;
-                let exam = (sGrades.find(g => g.week === 'ex1')?.score || 0) + (sGrades.find(g => g.week === 'ex2')?.score || 0);
+                let exams = (sGrades.find(g => g.week === 'ex1')?.score || 0) + (sGrades.find(g => g.week === 'ex2')?.score || 0);
                 let mAvg = (parseFloat(aT)+parseFloat(aV)+parseFloat(aS)).toFixed(1);
                 
-                row += `<td>${aT}</td><td>${aV}</td><td>${aS}</td><td>${mAvg}</td><td>${exam}</td><td class="main-total">${(parseFloat(mAvg)+exam).toFixed(1)}</td>`;
+                row += `<td>${aT}</td><td>${aV}</td><td>${aS}</td><td>${mAvg}</td><td>${exams}</td><td style="background:#fffbeb; font-weight:bold">${(parseFloat(mAvg)+exams).toFixed(1)}</td>`;
             });
             return `<tr>${row}</tr>`;
         }).join('');
     }
 
-    function exportExcel() {
-        const table = document.getElementById('controlTable');
+    function exportProExcel() {
+        const table = document.getElementById('masterControlTable');
         const wb = XLSX.utils.table_to_sheet(table);
         wb['!views'] = [{RTL: true}];
         const out = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(out, wb, "شيت الكنترول");
-        XLSX.writeFile(out, `Control_Report_2026.xlsx`);
+        XLSX.utils.book_append_sheet(out, wb, "شيت الكنترول النهائي");
+        XLSX.writeFile(out, `Final_Control_Report_2026.xlsx`);
     }
+    function logout() { sessionStorage.clear(); window.location.href="index.html"; }
 </script>
 </body>
 </html>
