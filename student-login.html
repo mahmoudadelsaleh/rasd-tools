@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>استعلام النتائج - نظام الخدمة 2026</title>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
+    <style>
+        :root { --primary: #0f172a; --accent: #3b82f6; --bg: #f1f5f9; }
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--bg); margin: 0; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
+        header { background: var(--primary); color: white; width: 100%; padding: 20px; text-align: center; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .search-card { background: white; padding: 25px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); width: 90%; max-width: 450px; margin-top: -30px; z-index: 100; }
+        input { width: 100%; padding: 15px; margin: 15px 0; border-radius: 12px; border: 1px solid #cbd5e1; font-size: 16px; text-align: center; box-sizing: border-box; }
+        .btn-search { width: 100%; padding: 15px; border-radius: 12px; border: none; background: var(--accent); color: white; font-weight: bold; cursor: pointer; font-size: 16px; }
+        .result-area { width: 90%; max-width: 600px; margin-top: 20px; display: none; }
+        .subject-card { background: white; padding: 15px; border-radius: 12px; margin-bottom: 10px; border-right: 5px solid var(--accent); display: flex; justify-content: space-between; align-items: center; }
+        .locked-msg { background: #fee2e2; color: #991b1b; padding: 20px; border-radius: 12px; text-align: center; border: 1px solid #fecaca; margin-top: 20px; }
+    </style>
+</head>
+<body>
+
+<header>
+    <h2 id="schName">نظام الرصد الذكي</h2>
+    <p>استعلام نتائج الطلاب v2026</p>
+</header>
+
+<div class="search-card">
+    <label>ادخل كود الطالب الموحد (المسلسل):</label>
+    <input type="number" id="studentId" placeholder="مثال: 45">
+    <button class="btn-search" onclick="checkResult()">عرض النتيجة 🔍</button>
+</div>
+
+<div id="statusArea" class="result-area"></div>
+<div id="resultsContent" class="result-area"></div>
+
+<script>
+    const firebaseConfig = { apiKey: "AIzaSyBePGZiqMPmZQdg36jZ4Rkdtd7OISxmob8", projectId: "rasd-tools" };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    async function checkResult() {
+        const sId = parseInt(document.getElementById('studentId').value);
+        const resContent = document.getElementById('resultsContent');
+        const statArea = document.getElementById('statusArea');
+
+        if(!sId) return alert("يرجى كتابة الكود");
+
+        // 1. التحقق من صلاحية العرض (حجب أو إتاحة) من الماستر
+        const conf = await db.collection('system').doc('config').get();
+        const config = conf.data();
+        
+        // تحديث اسم المدرسة
+        document.getElementById('schName').innerText = config.schoolName || "نظام الخدمة";
+
+        if(config.showResults === false) {
+            statArea.innerHTML = `<div class="locked-msg">
+                <h3>🚫 النتائج محجوبة حالياً</h3>
+                <p>اعتذار: ${config.controlWord || 'النتائج قيد المراجعة، يرجى المحاولة لاحقاً.'}</p>
+            </div>`;
+            statArea.style.display = 'block';
+            resContent.style.display = 'none';
+            return;
+        }
+
+        // 2. البحث عن الطالب
+        const sSnap = await db.collection('students').where('sortOrder', '==', sId).get();
+        if(sSnap.empty) {
+            alert("الكود غير صحيح أو الطالب غير مسجل");
+            return;
+        }
+
+        const student = sSnap.docs[0].data();
+        const studentId = sSnap.docs[0].id;
+
+        // 3. جلب الدرجات
+        const gSnap = await db.collection('grades').where('sid', '==', studentId).get();
+        
+        statArea.innerHTML = `<div style="text-align:center; padding:10px;">
+            <b>الطالب: ${student.name}</b><br>
+            <small>الصف: ${student.classCode.split('/')[0]} - فصل: ${student.classCode.split('/')[1]}</small>
+        </div>`;
+        statArea.style.display = 'block';
+
+        let html = '<h4 style="text-align:center">بيان الدرجات المعتمدة</h4>';
+        gSnap.forEach(doc => {
+            const g = doc.data();
+            html += `<div class="subject-card">
+                <div>
+                    <b>${g.subject}</b><br>
+                    <small>نوع التقييم: ${g.type == 't' ? 'تقييم' : g.type == 'v' ? 'واجب' : 'سلوك'}</small>
+                </div>
+                <div style="font-size:20px; font-weight:bold; color:var(--accent)">${g.score}</div>
+            </div>`;
+        });
+
+        resContent.innerHTML = html;
+        resContent.style.display = 'block';
+    }
+</script>
+</body>
+</html>
