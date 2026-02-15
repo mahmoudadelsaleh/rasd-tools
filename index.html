@@ -2,205 +2,62 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>لوحة الماستر v2026 - النظام الذكي الكامل</title>
-
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>دخول الماستر - نظام الخدمة 2026</title>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-
     <style>
-        :root { --primary: #0f172a; --accent: #3b82f6; --danger: #ef4444; --success: #10b981; --bg: #f1f5f9; }
-        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--bg); margin: 0; display: flex; flex-direction: column; align-items: center; overscroll-behavior-y: contain; }
-        .app-container { width: 100%; max-width: 600px; min-height: 100vh; background: var(--bg); box-shadow: 0 0 20px rgba(0,0,0,0.1); }
-        header { background: var(--primary); color: white; padding: 15px; text-align: center; position: sticky; top: 0; z-index: 1001; display: flex; justify-content: center; align-items: center; gap: 10px; }
-        .tabs-nav { display: grid; grid-template-columns: repeat(4, 1fr); background: white; border-bottom: 2px solid #e2e8f0; position: sticky; top: 54px; z-index: 1000; }
-        .tab-btn { padding: 12px 5px; border: none; background: none; cursor: pointer; font-weight: bold; font-size: 11px; color: #64748b; border-bottom: 2px solid transparent; transition: 0.3s; }
-        .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); background: #f0f7ff; }
-        .content-area { padding: 15px; box-sizing: border-box; padding-bottom: 80px; }
-        .tab-panel { display: none; }
-        .tab-panel.active { display: block; animation: fadeIn 0.3s; }
-        .card { background: white; border-radius: 15px; padding: 15px; margin-bottom: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; }
-        .stat-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
-        .stat-box { background: white; padding: 12px; border-radius: 12px; text-align: center; border: 1px solid #e2e8f0; }
-        .stat-val { display: block; font-size: 22px; font-weight: bold; color: var(--accent); }
-        .teacher-card { background: white; border-radius: 12px; padding: 15px; margin-bottom: 12px; border-right: 5px solid var(--accent); position: relative; }
-        .btn-main { width: 100%; padding: 12px; border-radius: 10px; border: none; font-weight: bold; cursor: pointer; color: white; margin-bottom: 8px; transition: 0.2s; }
-        input, select, textarea { width: 100%; padding: 12px; margin: 5px 0 10px; border-radius: 10px; border: 1px solid #cbd5e1; background: #f8fafc; font-size: 14px; box-sizing: border-box; }
-        .grid-checks { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0; background: #f8fafc; padding: 10px; border-radius: 10px; }
-        .check-item { background: white; border: 1px solid #e2e8f0; padding: 6px 12px; border-radius: 20px; font-size: 11px; display: flex; align-items: center; gap: 5px; }
-        .list-item { display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid #f1f5f9; }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        body { font-family: 'Segoe UI', sans-serif; background: #0f172a; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; color: white; }
+        .login-card { background: #1e293b; padding: 30px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); width: 100%; max-width: 350px; text-align: center; }
+        input { width: 100%; padding: 12px; margin: 10px 0; border-radius: 10px; border: 1px solid #334155; background: #0f172a; color: white; box-sizing: border-box; }
+        button { width: 100%; padding: 12px; border-radius: 10px; border: none; background: #3b82f6; color: white; font-weight: bold; cursor: pointer; transition: 0.3s; }
+        button:hover { background: #2563eb; }
+        .error { color: #ef4444; font-size: 14px; margin-top: 10px; display: none; }
     </style>
 </head>
 <body>
 
-<div class="app-container">
-    <header>
-        <b>لوحة الماستر v2026 - مشروع rasd-tools</b>
-        <div id="status" style="font-size: 10px; color: #94a3b8; position: absolute; left: 15px;">...</div>
-    </header>
-
-    <div class="tabs-nav">
-        <button class="tab-btn active" onclick="openTab(event, 'stats')">📊 الإحصائيات</button>
-        <button class="tab-btn" onclick="openTab(event, 'teachers')">👨‍🏫 المعلمين</button>
-        <button class="tab-btn" onclick="openTab(event, 'students')">🎓 الطلاب</button>
-        <button class="tab-btn" onclick="openTab(event, 'settings')">⚙️ الإعدادات</button>
-    </div>
-
-    <div class="content-area">
-        <div id="stats" class="tab-panel active">
-            <div class="stat-grid">
-                <div class="stat-box"><span class="stat-val" id="s-t">0</span><span>معلم</span></div>
-                <div class="stat-box"><span class="stat-val" id="s-s">0</span><span>طالب</span></div>
-            </div>
-            <div id="systemSummary" class="card" style="margin-top:15px;"></div>
-        </div>
-
-        <div id="teachers" class="tab-panel">
-            <div class="card">
-                <h4>إضافة معلم جديد</h4>
-                <input type="text" id="tName" placeholder="الاسم الكامل">
-                <input type="text" id="tSub" placeholder="المادة">
-                <input type="text" id="tUser" placeholder="اسم الدخول (ID)">
-                <input type="text" id="tPass" placeholder="كلمة المرور">
-                <div class="grid-checks">
-                    <label class="check-item"><input type="checkbox" name="tCls" value="1_general"> أولى ثانوي</label>
-                    <label class="check-item"><input type="checkbox" name="tCls" value="2_scientific"> ثانية علمي</label>
-                    <label class="check-item"><input type="checkbox" name="tCls" value="2_literary"> ثانية أدبي</label>
-                </div>
-                <button class="btn-main" style="background:var(--accent)" onclick="saveTeacher()">حفظ المعلم</button>
-            </div>
-            <div id="teacherCards"></div>
-        </div>
-
-        <div id="students" class="tab-panel">
-            <div class="card">
-                <h4>➕ إضافة طلاب (كل اسم في سطر)</h4>
-                <select id="sGrade">
-                    <option value="1_general">أولى ثانوي</option>
-                    <option value="2_scientific">ثانية علمي</option>
-                    <option value="2_literary">ثانية أدبي</option>
-                </select>
-                <textarea id="sNames" rows="5" placeholder="الأسماء هنا..."></textarea>
-                <button class="btn-main" style="background:var(--primary)" onclick="uploadStudents()">رفع الطلاب</button>
-            </div>
-        </div>
-
-        <div id="settings" class="tab-panel">
-            <div class="card">
-                <h4>⚙️ إعدادات الدرجات</h4>
-                <label>عدد الأسابيع:</label> <input type="number" id="weeksCount" value="14">
-                <label>التقييم الأسبوعي:</label> <input type="number" id="maxT" value="15">
-                <label>الواجب:</label> <input type="number" id="maxV" value="15">
-                <label>السلوك:</label> <input type="number" id="maxS" value="10">
-                <button class="btn-main" style="background:var(--success)" onclick="saveAllSettings()">حفظ الإعدادات</button>
-            </div>
-        </div>
-    </div>
+<div class="login-card">
+    <h2>🔐 دخول الماستر</h2>
+    <p>نظام الرصد الذكي v2.0</p>
+    <input type="text" id="username" placeholder="اسم المستخدم">
+    <input type="password" id="password" placeholder="كلمة المرور">
+    <button onclick="login()">دخول النظام</button>
+    <div id="errMsg" class="error">بيانات الدخول غير صحيحة!</div>
 </div>
 
 <script>
-    // إعدادات فايربيز الخاصة بك
+    // إعدادات فايربيز الخاصة بك (rasd-tools)
     const firebaseConfig = {
         apiKey: "AIzaSyBePGZiqMPmZQdg36jZ4Rkdtd7OISxmob8",
         authDomain: "rasd-tools.firebaseapp.com",
-        projectId: "rasd-tools",
-        storageBucket: "rasd-tools.firebasestorage.app",
-        messagingSenderId: "1048930814102",
-        appId: "1:1048930814102:web:6382a0efde498149281ab7"
+        projectId: "rasd-tools"
     };
-
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
-    
-    let teachers = [], students = [], settings = {};
 
-    async function init() {
-        document.getElementById('status').innerText = "⏳ جاري التحميل...";
-        try {
-            const [tS, sS, settingsS] = await Promise.all([
-                db.collection('teachers').get(),
-                db.collection('students').get(),
-                db.collection('system').doc('settings').get()
-            ]);
+    async function login() {
+        const user = document.getElementById('username').value;
+        const pass = document.getElementById('password').value;
+        const errMsg = document.getElementById('errMsg');
 
-            teachers = tS.docs.map(d => ({id: d.id, ...d.data()}));
-            students = sS.docs.map(d => ({id: d.id, ...d.data()}));
-            settings = settingsS.exists ? settingsS.data() : { weeksCount: 14, maxT: 15, maxV: 15, maxS: 10 };
+        // التحقق من بيانات الماستر التي طلبتها
+        if (user === "almas2021" && pass === "790707071") {
+            sessionStorage.setItem('isAdmin', 'true');
+            sessionStorage.setItem('role', 'super_admin');
+            
+            // تخزين بيانات المدير في فايربيز للتأكد من وجودها دائماً
+            await db.collection('admins').doc('master').set({
+                username: user,
+                role: 'super_admin',
+                lastLogin: new Date()
+            });
 
-            renderUI();
-            document.getElementById('status').innerText = "✅ متصل";
-        } catch (e) {
-            console.error(e);
-            document.getElementById('status').innerText = "❌ خطأ في الاتصال";
+            window.location.href = "school-setup.html"; // التوجه لصفحة الإعدادات
+        } else {
+            errMsg.style.display = 'block';
         }
     }
-
-    function renderUI() {
-        document.getElementById('s-t').innerText = teachers.length;
-        document.getElementById('s-s').innerText = students.length;
-
-        const tDiv = document.getElementById('teacherCards');
-        tDiv.innerHTML = '<h4>قائمة المعلمين</h4>';
-        teachers.forEach(t => {
-            tDiv.innerHTML += `<div class="teacher-card">
-                <b>${t.name}</b> - ${t.subject} <br>
-                <small>الفصول: ${t.classes ? t.classes.join(', ') : ''}</small>
-            </div>`;
-        });
-    }
-
-    async function saveTeacher() {
-        const id = document.getElementById('tUser').value.trim();
-        const name = document.getElementById('tName').value;
-        const subject = document.getElementById('tSub').value;
-        const pass = document.getElementById('tPass').value;
-        const classes = Array.from(document.querySelectorAll('input[name="tCls"]:checked')).map(c => c.value);
-
-        if(!id || !name || classes.length === 0) return alert("يرجى إكمال جميع البيانات");
-
-        await db.collection('teachers').doc(id).set({ name, subject, pass, classes, role: "teacher" });
-        alert("تم حفظ المعلم بنجاح");
-        init();
-    }
-
-    async function uploadStudents() {
-        const gradeVal = document.getElementById('sGrade').value;
-        const names = document.getElementById('sNames').value.split('\n').filter(n => n.trim() !== "");
-        const [g, b] = gradeVal.split('_');
-
-        const batch = db.batch();
-        names.forEach(name => {
-            const ref = db.collection('students').doc();
-            batch.set(ref, { name: name.trim(), grade: g, branch: b || 'general' });
-        });
-
-        await batch.commit();
-        alert(`تم إضافة ${names.length} طالب بنجاح`);
-        document.getElementById('sNames').value = '';
-        init();
-    }
-
-    async function saveAllSettings() {
-        const newSettings = {
-            weeksCount: parseInt(document.getElementById('weeksCount').value),
-            maxT: parseInt(document.getElementById('maxT').value),
-            maxV: parseInt(document.getElementById('maxV').value),
-            maxS: parseInt(document.getElementById('maxS').value)
-        };
-        await db.collection('system').doc('settings').set(newSettings);
-        alert("تم حفظ الإعدادات العامة");
-    }
-
-    function openTab(evt, tabId) {
-        document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
-        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-        document.getElementById(tabId).classList.add('active');
-        evt.currentTarget.classList.add('active');
-    }
-
-    window.onload = init;
 </script>
 </body>
 </html>
