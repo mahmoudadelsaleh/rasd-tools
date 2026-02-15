@@ -2,66 +2,49 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Master Control Hub v2026 | مدرسة محمود عادل</title>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
-        :root { --navy: #0a192f; --gold: #c5a059; --bg: #f8fafc; --white: #ffffff; }
-        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--bg); margin: 0; color: var(--navy); }
-        .academic-header { background: var(--navy); color: white; padding: 15px 25px; border-bottom: 4px solid var(--gold); display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 1000; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
-        .container { padding: 20px; max-width: 1500px; margin: auto; }
-        .card { background: var(--white); border-radius: 12px; padding: 25px; margin-bottom: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); border-right: 6px solid var(--gold); }
+        :root { --navy: #0a192f; --gold: #c5a059; --bg: #f8fafc; }
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--bg); margin: 0; }
+        .academic-header { background: var(--navy); color: white; padding: 15px 25px; border-bottom: 4px solid var(--gold); display: flex; justify-content: space-between; align-items: center; }
+        .container { padding: 20px; max-width: 1200px; margin: auto; }
+        .card { background: white; border-radius: 12px; padding: 25px; margin-bottom: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); border-right: 6px solid var(--gold); }
         .grid-filters { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 20px; }
-        select, input { padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-weight: bold; background: #fff; }
-        .btn-gold { padding: 15px 30px; background: var(--gold); color: var(--navy); border: none; border-radius: 8px; font-weight: 800; cursor: pointer; transition: 0.3s; width: 100%; text-transform: uppercase; }
-        .btn-gold:hover { background: #b08d4a; transform: translateY(-2px); }
-        .table-wrap { overflow-x: auto; background: white; border-radius: 12px; border: 1px solid #e2e8f0; max-height: 750px; }
-        table { width: 100%; border-collapse: collapse; font-size: 11px; text-align: center; }
-        th { background: #f1f5f9; position: sticky; top: 0; z-index: 10; padding: 10px; border: 1px solid #cbd5e1; }
-        td { border: 1px solid #e2e8f0; padding: 6px; }
-        .sub-header { background: #fdfbf7; font-weight: bold; color: var(--navy); }
-        .total-cell { background: #fffbeb; font-weight: bold; color: #92400e; }
+        select { padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-weight: bold; }
+        .btn-gold { padding: 15px; background: var(--gold); color: var(--navy); border: none; border-radius: 8px; font-weight: 800; cursor: pointer; width: 100%; transition: 0.3s; }
+        .btn-gold:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+        .status-msg { margin-top: 10px; font-size: 13px; color: #1e40af; font-weight: bold; text-align: center; display: none; }
     </style>
 </head>
 <body>
 
 <header class="academic-header">
-    <div style="font-size: 20px; font-weight: 800;">🏛️ UNIVERSITY<span style="color:var(--gold)">HUB</span> | كشوف الكنترول</div>
-    <div style="display:flex; gap:15px; align-items:center;">
-        <a href="manage-data.html" style="color:var(--gold); text-decoration:none; font-weight:bold; font-size:14px;">العودة للإدارة ⬅️</a>
-        <button onclick="logout()" style="background:transparent; border:1px solid var(--gold); color:var(--gold); padding:5px 12px; border-radius:6px; cursor:pointer;">خروج</button>
-    </div>
+    <div style="font-size: 20px; font-weight: 800;">🏛️ كشوف الكنترول الموحدة | مدرسة محمود عادل</div>
+    <a href="manage-data.html" style="color:var(--gold); text-decoration:none; font-weight:bold;">العودة للإدارة ⬅️</a>
 </header>
 
 <div class="container">
     <div class="card">
+        <h3>🚀 استخراج التقرير العملاق (كل المواد في ملف واحد)</h3>
         <div class="grid-filters">
-            <select id="gradeSel" onchange="updateClassList()"><option value="">اختر الصف...</option></select>
+            <select id="gradeSel" onchange="updateClassList()"><option value="">اختر الصف الدراسي...</option></select>
             <select id="classSel"><option value="">كل الفصول</option></select>
             <select id="typeSel">
                 <option value="عام">عام (للصف الأول)</option>
                 <option value="علمي">قسم علمي</option>
                 <option value="أدبي">قسم أدبي</option>
             </select>
-            <select id="periodSel">
-                <option value="full">التقرير الشامل (المتوسط السنوي)</option>
-                <option value="p1">الفترة الأولى (1-7)</option>
-                <option value="p2">الفترة الثانية (8-14)</option>
-            </select>
         </div>
-        <button class="btn-gold" onclick="generateAcademicReport()">توليد تقرير الكنترول المعتمد 🔍</button>
-        <button class="btn-gold" style="margin-top:10px; background:#065f46; color:white;" onclick="exportProExcel()">تصدير شيت Excel RTL 📥</button>
-    </div>
-
-    <div class="table-wrap">
-        <table id="controlTable">
-            <thead id="cHead"></thead>
-            <tbody id="cBody"></tbody>
-        </table>
+        <button class="btn-gold" onclick="exportFullSystemExcel()">توليد وتنزيل الملف الشامل 📥</button>
+        <div id="statusMsg" class="status-msg">⏳ جاري معالجة البيانات وبناء الشيتات...</div>
     </div>
 </div>
+
+<div id="hiddenTables" style="display:none;"></div>
 
 <script>
     const firebaseConfig = { apiKey: "AIzaSyBePGZiqMPmZQdg36jZ4Rkdtd7OISxmob8", projectId: "rasd-tools" };
@@ -69,8 +52,6 @@
     const db = firebase.firestore();
 
     let sysConfig = {};
-    
-    // تعريف هياكل المواد حسب طلبك
     const structure = {
         "1": ["اللغة العربية", "اللغة الإنجليزية", "الرياضيات", "التاريخ", "العلوم المتكاملة", "الفلسفة", "التربية الدينية", "اللغة الثانية (الفرنسية)", "المواطنة وحقوق الإنسان", "البرمجة والذكاء الاصطناعي"],
         "2_علمي": ["اللغة العربية", "اللغة الإنجليزية", "الرياضيات", "التاريخ", "الفيزياء", "الكيمياء", "التربية الدينية", "اللغة الثانية (الفرنسية)", "المواطنة وحقوق الإنسان"],
@@ -93,18 +74,19 @@
         if(grade) grade.classes.forEach(c => cSel.innerHTML += `<option value="${c.name}">${c.name}</option>`);
     }
 
-    async function generateAcademicReport() {
+    async function exportFullSystemExcel() {
         const grade = document.getElementById('gradeSel').value;
-        const cls = document.getElementById('classSel').value;
         const type = document.getElementById('typeSel').value;
-        const period = document.getElementById('periodSel').value;
-
+        const cls = document.getElementById('classSel').value;
         if(!grade) return alert("يرجى اختيار الصف");
+
+        document.getElementById('statusMsg').style.display = 'block';
 
         const gNum = grade.match(/\d+/)[0];
         const subKey = gNum === "1" ? "1" : `2_${type}`;
         const activeSubs = structure[subKey];
 
+        // 1. جلب البيانات
         const sSnap = await db.collection('students').get();
         let students = sSnap.docs.map(d => ({id:d.id, ...d.data()}))
                             .filter(s => s.classCode.startsWith(gNum + '/'))
@@ -114,64 +96,104 @@
         const gSnap = await db.collection('grades').get();
         const allGrades = gSnap.docs.map(d => d.data());
 
-        renderTableUI(students, allGrades, activeSubs, period);
-    }
+        const wb = XLSX.utils.book_new();
 
-    function renderTableUI(students, grades, subjects, period) {
-        const head = document.getElementById('cHead');
-        const body = document.getElementById('cBody');
-        
-        let h1 = `<tr><th rowspan="2">م</th><th rowspan="2">الاسم</th><th rowspan="2">الفصل</th>`;
-        let h2 = `<tr>`;
+        // 2. إنشاء "الشيت الشامل" (Master Sheet)
+        const masterData = buildMasterSheet(students, allGrades, activeSubs);
+        const wsMaster = XLSX.utils.aoa_to_sheet(masterData);
+        wsMaster['!views'] = [{RTL: true}];
+        XLSX.utils.book_append_sheet(wb, wsMaster, "التقرير الشامل");
 
-        subjects.forEach(sub => {
-            h1 += `<th colspan="6" class="sub-header">${sub}</th>`;
-            h2 += `<th>م.ت</th><th>م.و</th><th>م.س</th><th>م.عام</th><th>اختبار</th><th>نهائي</th>`;
+        // 3. إنشاء شيت منفصل لكل مادة (رصد فعلي)
+        activeSubs.forEach(sub => {
+            const subData = buildSubjectDetailSheet(students, allGrades, sub);
+            const wsSub = XLSX.utils.aoa_to_sheet(subData);
+            wsSub['!views'] = [{RTL: true}];
+            XLSX.utils.book_append_sheet(wb, wsSub, sub.substring(0, 30)); // اسم الشيت بحد أقصى 31 حرف
         });
-        head.innerHTML = h1 + `</tr>` + h2 + `</tr>`;
 
-        body.innerHTML = students.map(st => {
-            let row = `<td>${st.sortOrder}</td><td style="text-align:right; font-weight:bold;">${st.name}</td><td>${st.classCode}</td>`;
-            
-            subjects.forEach(sub => {
-                let sGrades = grades.filter(g => g.sid === st.id && g.subject === sub);
-                let sumT=0, sumV=0, sumS=0, count=0;
-                
-                // تحديد الأسابيع حسب الفترة
-                let weeks = (period==='p1') ? 7 : (period==='p2' ? 14 : 14);
-                let start = (period==='p2') ? 8 : 1;
-
-                for(let i=start; i<=weeks; i++){
-                    let w = 'w'+i;
-                    let wt = sGrades.find(g => g.week === w && g.type === 't')?.score || 0;
-                    let wv = sGrades.find(g => g.week === w && g.type === 'v')?.score || 0;
-                    let ws = sGrades.find(g => g.week === w && g.type === 's')?.score || 0;
-                    if(wt>0 || wv>0) { sumT+=wt; sumV+=wv; sumS+=ws; count++; }
-                }
-                
-                let aT = count>0 ? (sumT/count).toFixed(1) : 0;
-                let aV = count>0 ? (sumV/count).toFixed(1) : 0;
-                let aS = count>0 ? (sumS/count).toFixed(1) : 0;
-                
-                let examScore = 0;
-                if(period === 'p1') examScore = sGrades.find(g => g.week === 'ex1')?.score || 0;
-                else if(period === 'p2') examScore = sGrades.find(g => g.week === 'ex2')?.score || 0;
-                else examScore = (sGrades.find(g => g.week === 'ex1')?.score || 0) + (sGrades.find(g => g.week === 'ex2')?.score || 0);
-
-                let mAvg = (parseFloat(aT)+parseFloat(aV)+parseFloat(aS)).toFixed(1);
-                row += `<td>${aT}</td><td>${aV}</td><td>${aS}</td><td>${mAvg}</td><td>${examScore}</td><td class="total-cell">${(parseFloat(mAvg)+examScore).toFixed(1)}</td>`;
-            });
-            return `<tr>${row}</tr>`;
-        }).join('');
+        // 4. التصدير النهائي
+        XLSX.writeFile(wb, `كنترول_كامل_${grade}_${type}_${new Date().toLocaleDateString('ar-EG')}.xlsx`);
+        document.getElementById('statusMsg').style.display = 'none';
+        alert("✅ تم توليد ملف الكنترول الشامل بنجاح!");
     }
 
-    function exportProExcel() {
-        const table = document.getElementById('controlTable');
-        const wb = XLSX.utils.table_to_sheet(table);
-        wb['!views'] = [{RTL: true}];
-        const out = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(out, wb, "شيت الكنترول 2026");
-        XLSX.writeFile(out, `Academic_Report_${new Date().getTime()}.xlsx`);
+    function buildMasterSheet(students, grades, subjects) {
+        let rows = [];
+        // الهيدر الأول
+        let h1 = ["م", "الاسم", "الفصل"];
+        subjects.forEach(s => { for(let i=0; i<6; i++) h1.push(s); });
+        rows.push(h1);
+
+        // الهيدر الثاني
+        let h2 = ["", "", ""];
+        subjects.forEach(() => { h2.push("م.ت", "م.و", "م.س", "م.عام", "اختبار", "نهائي"); });
+        rows.push(h2);
+
+        students.forEach(st => {
+            let r = [st.sortOrder, st.name, st.classCode];
+            subjects.forEach(sub => {
+                let metrics = calcSubMetrics(st.id, grades, sub, 1, 14);
+                r.push(metrics.aT, metrics.aV, metrics.aS, metrics.mAvg, metrics.exams, metrics.final);
+            });
+            rows.push(r);
+        });
+        return rows;
+    }
+
+    function buildSubjectDetailSheet(students, grades, subject) {
+        let rows = [];
+        // ترويسة المادة
+        rows.push([`كشف رصد فعلي تفصيلي لمادة: ${subject}`, "", "", "", "", ""]);
+        
+        let h1 = ["م", "الاسم", "الفصل"];
+        for(let i=1; i<=14; i++) h1.push(`أسبوع ${i} (ت)`, `أسبوع ${i} (و)`, `أسبوع ${i} (س)`);
+        h1.push("م.ت", "م.و", "م.س", "إختبار 1", "إختبار 2", "النهائي");
+        rows.push(h1);
+
+        students.forEach(st => {
+            let r = [st.sortOrder, st.name, st.classCode];
+            let sGrades = grades.filter(g => g.sid === st.id && g.subject === subject);
+            let sumT=0, sumV=0, sumS=0, count=0;
+
+            for(let i=1; i<=14; i++) {
+                let w = 'w'+i;
+                let wt = sGrades.find(g => g.week === w && g.type === 't')?.score || 0;
+                let wv = sGrades.find(g => g.week === w && g.type === 'v')?.score || 0;
+                let ws = sGrades.find(g => g.week === w && g.type === 's')?.score || 0;
+                r.push(wt, wv, ws);
+                if(wt>0 || wv>0) { sumT+=wt; sumV+=wv; sumS+=ws; count++; }
+            }
+
+            let aT = count>0 ? (sumT/count).toFixed(1) : 0;
+            let aV = count>0 ? (sumV/count).toFixed(1) : 0;
+            let aS = count>0 ? (sumS/count).toFixed(1) : 0;
+            let ex1 = sGrades.find(g => g.week === 'ex1')?.score || 0;
+            let ex2 = sGrades.find(g => g.week === 'ex2')?.score || 0;
+            let final = (parseFloat(aT)+parseFloat(aV)+parseFloat(aS)+ex1+ex2).toFixed(1);
+
+            r.push(aT, aV, aS, ex1, ex2, final);
+            rows.push(r);
+        });
+        return rows;
+    }
+
+    function calcSubMetrics(sid, allGrades, subject, start, end) {
+        let sGrades = allGrades.filter(g => g.sid === sid && g.subject === subject);
+        let sumT=0, sumV=0, sumS=0, count=0;
+        for(let i=start; i<=end; i++){
+            let w = 'w'+i;
+            let wt = sGrades.find(g => g.week === w && g.type === 't')?.score || 0;
+            let wv = sGrades.find(g => g.week === w && g.type === 'v')?.score || 0;
+            let ws = sGrades.find(g => g.week === w && g.type === 's')?.score || 0;
+            if(wt>0 || wv>0) { sumT+=wt; sumV+=wv; sumS+=ws; count++; }
+        }
+        let aT = count>0 ? (sumT/count).toFixed(1) : 0;
+        let aV = count>0 ? (sumV/count).toFixed(1) : 0;
+        let aS = count>0 ? (sumS/count).toFixed(1) : 0;
+        let exams = (sGrades.find(g => g.week === 'ex1')?.score || 0) + (sGrades.find(g => g.week === 'ex2')?.score || 0);
+        let mAvg = (parseFloat(aT)+parseFloat(aV)+parseFloat(aS)).toFixed(1);
+        return { aT, aV, aS, mAvg, exams, final: (parseFloat(mAvg)+exams).toFixed(1) };
     }
 
     function logout() { sessionStorage.clear(); window.location.href="index.html"; }
