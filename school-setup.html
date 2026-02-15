@@ -2,336 +2,159 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=<!DOCTYPE html>
-<html lang="ar" dir="rtl">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>University Portal | Login</title>
-    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
-    <style>
-        :root { --navy: #0a192f; --gold: #c5a059; --white: #ffffff; }
-        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #f4f7f9; margin: 0; display: flex; justify-content: center; align-items: center; height: 100vh; overflow: hidden; }
-        .login-wrap { width: 90%; max-width: 400px; background: var(--white); border-radius: 20px; box-shadow: 0 15px 35px rgba(0,0,0,0.1); padding: 40px 25px; text-align: center; border-top: 6px solid var(--gold); }
-        .brand-logo { font-size: 26px; font-weight: 800; color: var(--navy); margin-bottom: 30px; letter-spacing: 1px; }
-        .brand-logo span { color: var(--gold); }
-        input { width: 100%; padding: 15px; margin-bottom: 15px; border: 1px solid #e2e8f0; border-radius: 10px; font-size: 16px; box-sizing: border-box; transition: 0.3s; }
-        input:focus { border-color: var(--gold); outline: none; }
-        button { width: 100%; padding: 16px; background: var(--navy); color: var(--gold); border: none; border-radius: 10px; font-weight: bold; font-size: 18px; cursor: pointer; }
-        .welcome-ov { display: none; font-size: 20px; font-weight: bold; color: var(--navy); }
-        .rem-box { display: flex; align-items: center; gap: 10px; font-size: 14px; margin-bottom: 20px; color: #64748b; }
-    </style>
-</head>
-<body>
-    <div class="login-wrap">
-        <div id="login_ui">
-            <div class="brand-logo">UNIVERSITY<span>HUB</span></div>
-            <input type="text" id="user" placeholder="اسم المستخدم">
-            <input type="password" id="pass" placeholder="كلمة المرور">
-            <div class="rem-box"><input type="checkbox" id="remMe" style="width:auto"> تذكر بياناتي على هذا الجهاز</div>
-            <button onclick="handleLogin()">دخول المنصة 🏛️</button>
-            <p id="msg" style="color:red; margin-top:15px; font-size:14px;"></p>
-        </div>
-        <div id="welcome_ui" class="welcome-ov"></div>
-    </div>
-<script>
-    const firebaseConfig = { apiKey: "AIzaSyBePGZiqMPmZQdg36jZ4Rkdtd7OISxmob8", projectId: "rasd-tools" };
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore();
-
-    window.onload = () => {
-        if(localStorage.getItem('savedUser')) {
-            document.getElementById('user').value = localStorage.getItem('savedUser');
-            document.getElementById('pass').value = localStorage.getItem('savedPass');
-            document.getElementById('remMe').checked = true;
-        }
-    };
-
-    async function handleLogin() {
-        const u = document.getElementById('user').value.trim();
-        const p = document.getElementById('pass').value.trim();
-        if(u === "almas2021" && p === "790707071") { 
-            loginSuccess(u, "الماستر محمود عادل", "school-setup.html"); 
-        } else {
-            const doc = await db.collection('teachers').doc(u).get();
-            if(doc.exists && doc.data().pass === p) {
-                loginSuccess(u, `الأستاذ/ ${doc.data().name}`, "teacher-panel.html");
-            } else { document.getElementById('msg').innerText = "بيانات الدخول غير صحيحة"; }
-        }
-    }
-
-    function loginSuccess(uid, name, target) {
-        if(document.getElementById('remMe').checked) {
-            localStorage.setItem('savedUser', document.getElementById('user').value);
-            localStorage.setItem('savedPass', document.getElementById('pass').value);
-        } else { localStorage.clear(); }
-        sessionStorage.setItem('userName', name);
-        document.getElementById('login_ui').style.display = 'none';
-        const w = document.getElementById('welcome_ui');
-        w.innerHTML = `👋 مرحباً بك<br><span style="color:var(--gold)">${name}</span>`;
-        w.style.display = 'block';
-        setTimeout(() => window.location.href = target, 1500);
-    }
-</script>
-</body>
-</html>
-width, initial-scale=1.0">
-    <title>Master Hub v2026 | مدرسة محمود عادل صالح</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Settings | Master Hub</title>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        :root { 
-            --gold: #c5a059; --navy: #0a192f; --white: #ffffff; 
-            --slate: #f8fafc; --crimson: #991b1b; --emerald: #065f46;
-        }
-        body { 
-            font-family: 'Segoe UI', Roboto, sans-serif; 
-            background: #f1f5f9; margin: 0; padding-bottom: 100px; color: var(--navy);
-        }
+        :root { --navy: #0a192f; --gold: #c5a059; --bg: #f8fafc; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; padding-bottom: 80px; }
         
-        /* شريط التنقل الفخم */
-        .academic-header {
-            background: var(--navy); color: var(--white);
-            padding: 20px 40px; display: flex; justify-content: space-between;
-            align-items: center; border-bottom: 4px solid var(--gold);
-            position: sticky; top: 0; z-index: 1000; box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-        }
-        .brand { font-size: 24px; font-weight: 800; letter-spacing: 1px; }
-        .brand span { color: var(--gold); }
-        .nav-menu { display: flex; gap: 30px; }
-        .nav-menu a { 
-            color: var(--white); text-decoration: none; font-weight: 600; 
-            font-size: 15px; transition: 0.3s; padding: 8px 15px; border-radius: 5px;
-        }
-        .nav-menu a:hover, .nav-menu a.active { background: var(--gold); color: var(--navy); }
+        /* Nav Mobile */
+        .nav-header { background: var(--navy); color: white; padding: 15px; position: sticky; top: 0; z-index: 100; border-bottom: 3px solid var(--gold); display: flex; justify-content: space-between; align-items: center; }
+        .nav-links { display: flex; gap: 10px; }
+        .nav-links a { color: #cbd5e1; text-decoration: none; font-size: 13px; font-weight: bold; padding: 5px 8px; border-radius: 5px; }
+        .nav-links a.active { background: var(--gold); color: var(--navy); }
 
-        .container { max-width: 1100px; margin: 40px auto; padding: 0 20px; }
-
-        /* البطاقات الأكاديمية */
-        .academic-card {
-            background: var(--white); border-radius: 0; border-top: 5px solid var(--gold);
-            padding: 35px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); margin-bottom: 30px;
-        }
-        .card-title { 
-            font-size: 20px; font-weight: 700; margin-bottom: 25px; 
-            display: flex; align-items: center; gap: 15px; border-bottom: 1px solid #e2e8f0;
-            padding-bottom: 15px;
-        }
-        .card-title i { color: var(--gold); }
-
-        .grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 25px; }
+        .container { padding: 15px; max-width: 800px; margin: auto; }
+        .card { background: white; border-radius: 12px; padding: 20px; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); border-right: 5px solid var(--gold); }
+        .card h3 { margin-top: 0; font-size: 17px; color: var(--navy); border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 15px; }
         
-        label { font-weight: 700; font-size: 14px; margin-bottom: 8px; display: block; color: #475569; }
-        input, select, textarea { 
-            width: 100%; padding: 14px; border: 1px solid #cbd5e1; border-radius: 4px;
-            font-size: 15px; transition: 0.3s; background: #fff;
-        }
-        input:focus { border-color: var(--gold); outline: none; box-shadow: 0 0 0 3px rgba(197, 160, 89, 0.1); }
+        .grid-inputs { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        label { font-size: 12px; font-weight: bold; color: #64748b; display: block; margin-top: 10px; }
+        input, select, textarea { width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 14px; box-sizing: border-box; }
+        
+        .lock-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 10px; }
+        .lock-btn { background: #f1f5f9; border: 1px solid #e2e8f0; padding: 10px; border-radius: 8px; font-size: 12px; display: flex; align-items: center; gap: 5px; font-weight: bold; }
 
-        /* منطقة الأقفال الموحدة */
-        .lock-section { background: #fdfbf7; padding: 20px; border-radius: 8px; border: 1px solid #f3e8d2; }
-        .lock-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 12px; }
-        .lock-item {
-            background: white; border: 1px solid #e2e8f0; padding: 12px;
-            display: flex; align-items: center; gap: 10px; font-size: 13px;
-            cursor: pointer; transition: 0.2s; font-weight: 600;
-        }
-        .lock-item:hover { border-color: var(--gold); }
-        .lock-item input { width: auto; cursor: pointer; }
-
-        .btn-gold { 
-            background: var(--gold); color: var(--navy); border: none;
-            padding: 20px 40px; font-size: 18px; font-weight: 800;
-            cursor: pointer; width: 100%; transition: 0.3s; text-transform: uppercase;
-        }
-        .btn-gold:hover { background: #b08d4a; transform: translateY(-2px); }
-
-        .user-info { display: flex; align-items: center; gap: 15px; font-size: 14px; }
-        .btn-logout { background: transparent; border: 1px solid var(--gold); color: var(--gold); padding: 5px 12px; cursor: pointer; }
-
-        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-        .animate { animation: slideUp 0.5s ease-out; }
+        .save-bar { position: fixed; bottom: 0; width: 100%; background: white; padding: 15px; box-shadow: 0 -5px 15px rgba(0,0,0,0.1); display: flex; justify-content: center; box-sizing: border-box; }
+        .btn-main { width: 100%; max-width: 400px; padding: 15px; background: var(--navy); color: var(--gold); border: none; border-radius: 10px; font-weight: bold; font-size: 16px; }
     </style>
 </head>
 <body>
-
-<header class="academic-header">
-    <div class="brand">UNIVERSITY<span>HUB</span> v2026</div>
-    <nav class="nav-menu">
-        <a href="school-setup.html" class="active">الإعدادات</a>
-        <a href="manage-data.html">الإدارة</a>
-        <a href="results.html">النتائج</a>
-    </nav>
-    <div class="user-info">
-        <span id="display_user"></span>
-        <button class="btn-logout" onclick="academicLogout()"><i class="fas fa-sign-out-alt"></i> خروج</button>
-    </div>
-</header>
-
-<div class="container animate">
-    <div class="academic-card">
-        <div class="card-title"><i class="fas fa-file-import"></i> استيراد هيكل الجامعة الأكاديمي</div>
-        <div style="border: 2px dashed #cbd5e1; padding: 40px; text-align: center; background: #fafafa;">
-            <p style="color: #64748b;">ارفع ملف الطلاب لاستخراج المستويات الدراسية والشُعب آلياً</p>
-            <input type="file" id="academic_excel" accept=".xlsx, .xls" style="max-width: 300px;" onchange="analyzeAcademicStructure(event)">
-            <div id="analysis_feedback" style="margin-top: 20px; font-weight: bold; color: var(--emerald);"></div>
+    <div class="nav-header">
+        <div class="nav-links">
+            <a href="school-setup.html" class="active">🏠 الإعدادات</a>
+            <a href="manage-data.html">👥 الإدارة</a>
+            <a href="results.html">📊 النتائج</a>
         </div>
+        <button onclick="logout()" style="background:transparent; color:var(--gold); border:1px solid var(--gold); padding:4px 10px; border-radius:5px; font-size:12px;">خروج</button>
     </div>
 
-    <div class="academic-card">
-        <div class="card-title"><i class="fas fa-university"></i> معلومات المؤسسة التعليمية</div>
-        <div class="grid-3">
-            <div style="grid-column: span 2;">
-                <label>الاسم الرسمي للمؤسسة:</label>
-                <input type="text" id="sch_name" placeholder="أدخل اسم المدرسة أو الجامعة">
-            </div>
-            <div>
-                <label>رؤية المؤسسة (مدير المدرسة):</label>
-                <textarea id="sch_principal" rows="2"></textarea>
-            </div>
+    <div class="container">
+        <div class="card">
+            <h3>🏗️ الهيكل الأكاديمي آلياً</h3>
+            <input type="file" id="up_excel" accept=".xlsx, .xls" onchange="readStructure(event)">
+            <p id="up_msg" style="font-size:12px; color:green; margin-top:8px;"></p>
         </div>
-        <div style="margin-top: 20px;">
-            <label>بيان شؤون الطلاب والكنترول (يظهر عند الحجب):</label>
+
+        <div class="card">
+            <h3>🏫 هوية المؤسسة</h3>
+            <label>اسم المدرسة:</label>
+            <input type="text" id="sch_name">
+            <label>بيان شؤون الطلاب (يظهر للطالب):</label>
             <textarea id="sch_control" rows="2"></textarea>
         </div>
-    </div>
 
-    <div class="academic-card">
-        <div class="card-title"><i class="fas fa-graduation-cap"></i> معايير التقييم الأكاديمي</div>
-        <div class="grid-3" style="grid-template-columns: repeat(4, 1fr);">
-            <div><label>التقييم (ت):</label><input type="number" id="max_t" value="15"></div>
-            <div><label>الواجب (و):</label><input type="number" id="max_v" value="15"></div>
-            <div><label>السلوك (س):</label><input type="number" id="max_s" value="10"></div>
-            <div><label>الاختبار:</label><input type="number" id="max_exam" value="30"></div>
+        <div class="card">
+            <h3>📊 موازين الدرجات (الحد الأقصى)</h3>
+            <div class="grid-inputs">
+                <div><label>التقييم (ت):</label><input type="number" id="max_t"></div>
+                <div><label>الواجب (و):</label><input type="number" id="max_v"></div>
+                <div><label>السلوك (س):</label><input type="number" id="max_s"></div>
+                <div><label>الاختبار:</label><input type="number" id="max_exam"></div>
+            </div>
         </div>
-        <div class="grid-3" style="margin-top:20px;">
-            <div><label>إجمالي الأسابيع:</label><input type="number" id="weeks_count" value="14" onchange="refreshLocksUI()"></div>
-            <div><label>عدد الاختبارات:</label><input type="number" id="exams_count" value="2" onchange="refreshLocksUI()"></div>
-        </div>
-    </div>
 
-    <div class="academic-card">
-        <div class="card-title"><i class="fas fa-lock"></i> بروتوكول الأقفال والظهور العام</div>
-        
-        <div style="margin-bottom: 30px;">
+        <div class="card">
+            <h3>🔐 إدارة الأقفال</h3>
             <label>بوابة النتائج للطلاب:</label>
-            <select id="show_results_toggle" style="background: var(--navy); color: var(--white); font-weight: bold;">
-                <option value="false">🔒 حجب النتائج (وضع الصيانة والمراجعة)</option>
-                <option value="true">🔓 إتاحة النتائج (النشر العام للطلاب)</option>
+            <select id="show_res">
+                <option value="false">🔒 محجوبة</option>
+                <option value="true">🔓 منشورة</option>
             </select>
-        </div>
-
-        <div class="lock-section">
-            <label><i class="fas fa-calendar-check"></i> فتح فترات الرصد الأسبوعية:</label>
-            <div id="weeks_grid" class="lock-grid"></div>
-            
-            <label style="margin-top:25px; display:block;"><i class="fas fa-file-signature"></i> فتح فترات رصد الاختبارات:</label>
-            <div id="exams_grid" class="lock-grid"></div>
+            <label style="margin-top:15px">الأسابيع المفتوحة:</label>
+            <div id="w_locks" class="lock-grid"></div>
+            <label style="margin-top:15px">الاختبارات المفتوحة:</label>
+            <div id="e_locks" class="lock-grid"></div>
         </div>
     </div>
 
-    <button class="btn-gold" onclick="academicSave()">اعتماد كافة التغييرات وحفظ البروتوكول 🏛️</button>
-</div>
+    <div class="save-bar">
+        <button class="btn-main" onclick="saveAll()">حفظ واعتماد التغييرات 💾</button>
+    </div>
 
 <script>
     const firebaseConfig = { apiKey: "AIzaSyBePGZiqMPmZQdg36jZ4Rkdtd7OISxmob8", projectId: "rasd-tools" };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
-
-    let academicData = { grades: [] };
-    let newStructure = [];
+    let currentData = {}, newGrades = [];
 
     window.onload = async () => {
-        const user = sessionStorage.getItem('userName');
-        if(!user) window.location.href = "index.html";
-        document.getElementById('display_user').innerText = user;
-
         const doc = await db.collection('system').doc('config').get();
         if(doc.exists) {
-            academicData = doc.data();
-            applySavedData();
-            refreshLocksUI();
+            currentData = doc.data();
+            document.getElementById('sch_name').value = currentData.schoolName || '';
+            document.getElementById('sch_control').value = currentData.controlWord || '';
+            document.getElementById('max_t').value = currentData.maxT || 15;
+            document.getElementById('max_v').value = currentData.maxV || 15;
+            document.getElementById('max_s').value = currentData.maxS || 10;
+            document.getElementById('max_exam').value = currentData.maxExam || 30;
+            document.getElementById('show_res').value = currentData.showResults ? "true" : "false";
+            renderLocksUI();
         }
     };
 
-    function analyzeAcademicStructure(e) {
+    function renderLocksUI() {
+        const wCont = document.getElementById('w_locks');
+        const eCont = document.getElementById('e_locks');
+        wCont.innerHTML = ''; eCont.innerHTML = '';
+        for(let i=1; i<=14; i++) {
+            const chk = (currentData.openWeeks && currentData.openWeeks.includes(`w${i}`)) ? 'checked' : '';
+            wCont.innerHTML += `<label class="lock-btn"><input type="checkbox" value="w${i}" ${chk}> أسبوع ${i}</label>`;
+        }
+        for(let i=1; i<=3; i++) {
+            const chk = (currentData.openExams && currentData.openExams.includes(`ex${i}`)) ? 'checked' : '';
+            eCont.innerHTML += `<label class="lock-btn"><input type="checkbox" value="ex${i}" ${chk}> اختبار ${i}</label>`;
+        }
+    }
+
+    function readStructure(e) {
         const reader = new FileReader();
         reader.onload = (event) => {
             const data = new Uint8Array(event.target.result);
             const wb = XLSX.read(data, {type: 'array'});
             const json = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], {header: 1});
             const map = {};
-            json.slice(1).forEach(r => {
-                if(r[2] && r[3]) {
-                    const g = `الصف ${r[2]}`;
-                    if(!map[g]) map[g] = new Set();
-                    map[g].add(`${r[2]}/${r[3]}`);
-                }
-            });
-            newStructure = Object.keys(map).map(g => ({ name: g, classes: Array.from(map[g]).map(c => ({name: c})) }));
-            document.getElementById('analysis_feedback').innerText = "🏛️ تم استخراج الهيكل الأكاديمي بنجاح";
+            json.slice(1).forEach(r => { if(r[2] && r[3]) {
+                const g = `الصف ${r[2]}`;
+                if(!map[g]) map[g] = new Set();
+                map[g].add(`${r[2]}/${r[3]}`);
+            }});
+            newGrades = Object.keys(map).map(g => ({ name: g, classes: Array.from(map[g]).map(c => ({name: c})) }));
+            document.getElementById('up_msg').innerText = "✅ تم استخراج الهيكل";
         };
         reader.readAsArrayBuffer(e.target.files[0]);
     }
 
-    function refreshLocksUI() {
-        const wCount = document.getElementById('weeks_count').value;
-        const eCount = document.getElementById('exams_count').value;
-        const wGrid = document.getElementById('weeks_grid');
-        const eGrid = document.getElementById('exams_grid');
-        
-        wGrid.innerHTML = ''; eGrid.innerHTML = '';
-        
-        for(let i=1; i<=wCount; i++) {
-            const checked = (academicData.openWeeks && academicData.openWeeks.includes(`w${i}`)) ? 'checked' : '';
-            wGrid.innerHTML += `<label class="lock-item"><input type="checkbox" value="w${i}" ${checked}> أسبوع ${i}</label>`;
-        }
-        for(let i=1; i<=eCount; i++) {
-            const checked = (academicData.openExams && academicData.openExams.includes(`ex${i}`)) ? 'checked' : '';
-            eGrid.innerHTML += `<label class="lock-item"><input type="checkbox" value="ex${i}" ${checked}> اختبار ${i}</label>`;
-        }
-    }
-
-    async function academicSave() {
+    async function saveAll() {
         const config = {
             schoolName: document.getElementById('sch_name').value,
-            principalWord: document.getElementById('sch_principal').value,
             controlWord: document.getElementById('sch_control').value,
             maxT: parseInt(document.getElementById('max_t').value),
             maxV: parseInt(document.getElementById('max_v').value),
             maxS: parseInt(document.getElementById('max_s').value),
             maxExam: parseInt(document.getElementById('max_exam').value),
-            weeksCount: parseInt(document.getElementById('weeks_count').value),
-            examsCount: parseInt(document.getElementById('exams_count').value),
-            showResults: document.getElementById('show_results_toggle').value === "true",
-            openWeeks: Array.from(document.querySelectorAll('#weeks_grid input:checked')).map(i => i.value),
-            openExams: Array.from(document.querySelectorAll('#exams_grid input:checked')).map(i => i.value),
-            grades: newStructure.length > 0 ? newStructure : academicData.grades,
-            updatedAt: Date.now()
+            showResults: document.getElementById('show_res').value === "true",
+            openWeeks: Array.from(document.querySelectorAll('#w_locks input:checked')).map(i => i.value),
+            openExams: Array.from(document.querySelectorAll('#e_locks input:checked')).map(i => i.value),
+            grades: newGrades.length > 0 ? newGrades : (currentData.grades || [])
         };
-
-        await db.collection('system').doc('config').set(config, {merge: true});
-        alert("🏛️ تم اعتماد البروتوكول الأكاديمي وحفظ كافة البيانات بنجاح");
-        location.reload();
+        await db.collection('system').doc('config').set(config, {merge:true});
+        alert("🏛️ تم الحفظ بنجاح"); location.reload();
     }
-
-    function applySavedData() {
-        document.getElementById('sch_name').value = academicData.schoolName || '';
-        document.getElementById('sch_principal').value = academicData.principalWord || '';
-        document.getElementById('sch_control').value = academicData.controlWord || '';
-        document.getElementById('max_t').value = academicData.maxT || 15;
-        document.getElementById('max_v').value = academicData.maxV || 15;
-        document.getElementById('max_s').value = academicData.maxS || 10;
-        document.getElementById('max_exam').value = academicData.maxExam || 30;
-        document.getElementById('weeks_count').value = academicData.weeksCount || 14;
-        document.getElementById('exams_count').value = academicData.examsCount || 2;
-        document.getElementById('show_results_toggle').value = academicData.showResults ? "true" : "false";
-    }
-
-    function academicLogout() { if(confirm("هل تود تسجيل الخروج من النظام الأكاديمي؟")) { sessionStorage.clear(); window.location.href="index.html"; } }
+    function logout() { sessionStorage.clear(); window.location.href="index.html"; }
 </script>
 </body>
 </html>
