@@ -3,49 +3,40 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>لوحة المعلم v2026 - الإصدار المعتمد</title>
+    <title>لوحة المعلم v2026 - مشروع الخدمة</title>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
     <style>
         :root { --primary: #3b82f6; --success: #10b981; --sidebar: #1e293b; --danger: #ef4444; }
-        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #f1f5f9; margin: 0; padding-bottom: 300px; overscroll-behavior-y: contain; }
+        body { font-family: 'Segoe UI', sans-serif; background: #f1f5f9; margin: 0; padding-bottom: 300px; overscroll-behavior-y: contain; }
         header { background: var(--sidebar); color: white; padding: 15px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 1000; }
         .container { padding: 12px; max-width: 600px; margin: auto; }
-        .card { background: white; border-radius: 12px; padding: 12px; margin-bottom: 10px; border: 1px solid #e2e8f0; transition: 0.3s; }
+        .card { background: white; border-radius: 12px; padding: 12px; margin-bottom: 10px; border: 1px solid #e2e8f0; }
         .active-row { border: 2px solid var(--primary); background: #eff6ff; }
-        .smart-keyboard { position: fixed; bottom: 20px; left: 10px; right: 10px; background: #e2e8f0; padding: 10px; display: none; grid-template-columns: repeat(5, 1fr); gap: 6px; z-index: 2000; border-radius: 15px; box-shadow: 0 -5px 15px rgba(0,0,0,0.2); border: 2px solid #94a3b8; }
-        .key-btn { background: white; border-radius: 8px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; height: 45px; font-size: 16px; border: 1px solid #94a3b8; }
+        .smart-keyboard { position: fixed; bottom: 20px; left: 10px; right: 10px; background: #e2e8f0; padding: 10px; display: none; grid-template-columns: repeat(5, 1fr); gap: 6px; z-index: 2000; border-radius: 15px; border: 2px solid #94a3b8; }
+        .key-btn { background: white; border-radius: 8px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; height: 45px; border: 1px solid #94a3b8; }
         .score-sel { width: 45px; height: 40px; font-weight: bold; text-align: center; border-radius: 8px; border: 1px solid #cbd5e1; background: #fff; font-size: 16px; cursor: pointer; }
         .score-sel.saved { border-color: var(--success); background: #f0fdf4; color: #15803d; }
-        .score-sel.active-input { border: 3px solid var(--primary); box-shadow: 0 0 8px rgba(59,130,246,0.3); }
-        .student-name { font-size: 13px; font-weight: 600; color: #334155; }
-        select { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #cbd5e1; font-weight: bold; margin-bottom: 10px; background: white; font-size: 14px; }
-        .sync-status { position: fixed; bottom: 5px; right: 10px; font-size: 10px; color: #64748b; }
+        select { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #cbd5e1; font-weight: bold; margin-bottom: 10px; background: white; }
     </style>
 </head>
 <body>
 
 <header>
-    <div>👨‍🏫 <b id="tName">جاري التعرف...</b></div>
-    <button id="closeBtn" onclick="closePad()" style="display:none; background:var(--danger); color:white; border:none; padding:6px 15px; border-radius:8px; font-weight:bold;">إغلاق</button>
+    <div>👨‍🏫 <b id="tName">جاري التحميل...</b></div>
+    <button id="closeBtn" onclick="closePad()" style="display:none; background:var(--danger); color:white; border:none; padding:6px 15px; border-radius:8px;">إغلاق</button>
 </header>
 
 <div class="container">
     <div id="setupArea">
-        <label style="font-size: 12px; font-weight: bold;">📖 المادة الدراسية:</label>
         <select id="vSubject" onchange="loadStudentsData()"><option value="">اختر المادة...</option></select>
-        
-        <label style="font-size: 12px; font-weight: bold;">🏫 الفصل الدراسي:</label>
         <select id="vClass" onchange="loadStudentsData()"><option value="">اختر الفصل...</option></select>
-        
-        <label style="font-size: 12px; font-weight: bold;">📅 الأسبوع / الاختبار:</label>
         <select id="vWeek" onchange="loadStudentsData()"><option value="">اختر الفترة...</option></select>
     </div>
     <div id="studentList"></div>
 </div>
 
 <div class="smart-keyboard" id="numPad"></div>
-<div class="sync-status" id="syncStat">📡 متصل</div>
 
 <script>
     const firebaseConfig = { apiKey: "AIzaSyBePGZiqMPmZQdg36jZ4Rkdtd7OISxmob8", projectId: "rasd-tools" };
@@ -57,91 +48,50 @@
 
     window.onload = async () => {
         if(!tId) return location.href="index.html";
-        
-        try {
-            // 1. جلب إعدادات الماستر
-            const confDoc = await db.collection('system').doc('config').get();
-            sysConfig = confDoc.exists ? confDoc.data() : {};
-
-            // 2. جلب بيانات المعلم
-            const tDoc = await db.collection('teachers').doc(tId).get();
-            if(tDoc.exists) {
-                teacherInfo = tDoc.data();
-                document.getElementById('tName').innerText = teacherInfo.name;
-                
-                // ملء المواد
-                const subSel = document.getElementById('vSubject');
-                if(teacherInfo.subjects) teacherInfo.subjects.forEach(s => subSel.innerHTML += `<option value="${s}">${s}</option>`);
-                
-                // ملء الفصول بدقة
-                const clsSel = document.getElementById('vClass');
-                if(teacherInfo.classes) {
-                    teacherInfo.classes.forEach((c, idx) => {
-                        clsSel.innerHTML += `<option value="${idx}">${c}</option>`;
-                    });
-                }
-            }
-
-            // 3. ملء الأسابيع بناءً على الأقفال المفتوحة
-            const weekSel = document.getElementById('vWeek');
-            if(sysConfig.openWeeks) sysConfig.openWeeks.forEach(w => weekSel.innerHTML += `<option value="${w}">الأسبوع ${w.substring(1)}</option>`);
-            if(sysConfig.openExams) sysConfig.openExams.forEach(ex => weekSel.innerHTML += `<option value="${ex}">اختبار شهر ${ex.substring(2)}</option>`);
-
-        } catch (e) { document.getElementById('syncStat').innerText = "❌ خطأ اتصال"; }
+        const confDoc = await db.collection('system').doc('config').get();
+        sysConfig = confDoc.exists ? confDoc.data() : {};
+        const tDoc = await db.collection('teachers').doc(tId).get();
+        if(tDoc.exists) {
+            teacherInfo = tDoc.data(); document.getElementById('tName').innerText = teacherInfo.name;
+            teacherInfo.subjects.forEach(s => document.getElementById('vSubject').innerHTML += `<option value="${s}">${s}</option>`);
+            teacherInfo.classes.forEach((c, idx) => document.getElementById('vClass').innerHTML += `<option value="${idx}">${c}</option>`);
+        }
+        const weekSel = document.getElementById('vWeek');
+        if(sysConfig.openWeeks) sysConfig.openWeeks.forEach(w => weekSel.innerHTML += `<option value="${w}">أسبوع ${w.substring(1)}</option>`);
+        if(sysConfig.openExams) sysConfig.openExams.forEach(ex => weekSel.innerHTML += `<option value="${ex}">اختبار شهر ${ex.substring(2)}</option>`);
     };
 
     async function loadStudentsData() {
         const sub = document.getElementById('vSubject').value;
         const clsIdx = document.getElementById('vClass').value;
         const week = document.getElementById('vWeek').value;
-        
         if(!sub || clsIdx === "" || !week) return;
 
-        document.getElementById('studentList').innerHTML = '<p style="text-align:center">⏳ جاري جلب الأسماء بالترتيب الكنترولي...</p>';
-
-        // استخراج أرقام الصف والفصل من النص المختار (مثل "الصف 1 - 1")
+        document.getElementById('studentList').innerHTML = '<p style="text-align:center">⏳ جاري جلب القائمة...</p>';
         const fullClassName = teacherInfo.classes[clsIdx]; 
-        const nums = fullClassName.match(/\d+/g); 
-        const gNum = parseInt(nums[0]); // رقم الصف
-        const cNum = parseInt(nums[1]); // رقم الفصل
+        const classCode = fullClassName.split(' - ')[1].trim(); 
 
-        try {
-            const sSnap = await db.collection('students')
-                                  .where('gradeNum', '==', gNum)
-                                  .where('classNum', '==', cNum)
-                                  .get();
-            
-            if (sSnap.empty) {
-                document.getElementById('studentList').innerHTML = `<p style="text-align:center; color:orange; padding:20px; background:white; border-radius:10px;">⚠️ لا يوجد طلاب مطابقين في قاعدة البيانات لـ (صف ${gNum} - فصل ${cNum})</p>`;
-                return;
-            }
+        const sSnap = await db.collection('students').where('classCode', '==', classCode).get();
+        if (sSnap.empty) { document.getElementById('studentList').innerHTML = `<p style="text-align:center; color:orange;">⚠️ لا يوجد طلاب بكود ${classCode}</p>`; return; }
 
-            currentStudents = sSnap.docs.map(doc => ({id: doc.id, ...doc.data()}))
-                                        .sort((a,b) => a.sortOrder - b.sortOrder);
-
-            // جلب الدرجات المرصودة مسبقاً
-            const gSnap = await db.collection('grades').where('teacher', '==', tId).where('week', '==', week).where('subject', '==', sub).get();
-            const scs = {};
-            gSnap.forEach(d => { const dta = d.data(); if(!scs[dta.sid]) scs[dta.sid] = {}; scs[dta.sid][dta.type] = dta.score; });
-
-            renderList(scs, week);
-        } catch (e) { document.getElementById('studentList').innerHTML = '<p style="text-align:center; color:red;">❌ فشل جلب البيانات</p>'; }
+        currentStudents = sSnap.docs.map(doc => ({id: doc.id, ...doc.data()})).sort((a,b) => a.sortOrder - b.sortOrder);
+        const gSnap = await db.collection('grades').where('teacher','==',tId).where('week','==',week).where('subject','==',sub).get();
+        const scs = {}; gSnap.forEach(d => { const dta = d.data(); if(!scs[dta.sid]) scs[dta.sid] = {}; scs[dta.sid][dta.type] = dta.score; });
+        renderList(scs, week);
     }
 
     function renderList(scores, week) {
         let html = '';
         currentStudents.forEach((s, idx) => {
             const sc = scores[s.id] || {};
-            html += `<div class="card" id="row_${s.id}">
-                <div style="display:flex; justify-content:space-between; align-items:center;">
-                    <span class="student-name">${s.sortOrder}. ${s.name}</span>
-                    <div style="display:flex; gap:5px;">`;
-            if(week.startsWith('ex')) {
-                html += drawInp(s.id, 'exam', sysConfig.maxExam || 30, sc.exam, 'اختبار');
-            } else {
-                html += drawInp(s.id, 't', sysConfig.maxT || 15, sc.t, 'ت');
-                html += drawInp(s.id, 'v', sysConfig.maxV || 15, sc.v, 'و');
-                html += drawInp(s.id, 's', sysConfig.maxS || 10, sc.s, 'س');
+            html += `<div class="card" id="row_${s.id}"><div style="display:flex; justify-content:space-between; align-items:center;">
+                <span style="font-size:13px; font-weight:600;">${s.sortOrder}. ${s.name}</span>
+                <div style="display:flex; gap:5px;">`;
+            if(week.startsWith('ex')) html += drawInp(s.id, 'exam', sysConfig.maxExam, sc.exam, 'اختبار');
+            else {
+                html += drawInp(s.id, 't', sysConfig.maxT, sc.t, 'ت');
+                html += drawInp(s.id, 'v', sysConfig.maxV, sc.v, 'و');
+                html += drawInp(s.id, 's', sysConfig.maxS, sc.s, 'س');
             }
             html += `</div></div></div>`;
         });
@@ -157,34 +107,25 @@
         activeInput = {sid, type, max};
         document.querySelectorAll('.card').forEach(c => c.classList.remove('active-row'));
         document.getElementById(`row_${sid}`).classList.add('active-row');
-        document.querySelectorAll('.score-sel').forEach(i => i.classList.remove('active-input'));
-        document.getElementById(`inp_${sid}_${type}`).classList.add('active-input');
-
         document.getElementById('setupArea').style.visibility = 'hidden';
         document.getElementById('closeBtn').style.display = 'block';
-
         const pad = document.getElementById('numPad');
         pad.style.display = 'grid';
         pad.style.gridTemplateColumns = max > 15 ? "repeat(8, 1fr)" : "repeat(5, 1fr)";
-
         let keys = '';
         for(let i=1; i<=max; i++) keys += `<div class="key-btn" onclick="inputValue(${i})">${i}</div>`;
         keys += `<div class="key-btn" style="background:#f1f5f9" onclick="inputValue(0)">0</div>
                  <div class="key-btn" style="background:#8b5cf6; color:white; font-size:12px" onclick="fillAllColumn()">الكل</div>
                  <div class="key-btn" style="background:var(--success); color:white; grid-column:span 2" onclick="closePad()">تم</div>`;
         pad.innerHTML = keys;
-        
-        const row = document.getElementById(`row_${sid}`);
-        window.scrollTo({ top: row.offsetTop - 80, behavior: 'smooth' });
+        window.scrollTo({ top: document.getElementById(`row_${sid}`).offsetTop - 80, behavior: 'smooth' });
     }
 
     function inputValue(val) {
-        if(!activeInput) return;
-        const {sid, type} = activeInput;
-        const inp = document.getElementById(`inp_${sid}_${type}`);
-        inp.value = val; inp.classList.add('saved');
-        saveToFirebase(sid, type, val);
-        autoNext();
+        if(!activeInput) return; const {sid, type} = activeInput;
+        document.getElementById(`inp_${sid}_${type}`).value = val;
+        document.getElementById(`inp_${sid}_${type}`).classList.add('saved');
+        saveToFirebase(sid, type, val); autoNext();
     }
 
     async function saveToFirebase(sid, type, score) {
@@ -199,13 +140,11 @@
         const week = document.getElementById('vWeek').value;
         const types = week.startsWith('ex') ? ['exam'] : ['t','v','s'];
         let nIdx = types.indexOf(activeInput.type) + 1;
-        if(nIdx < types.length) {
-            openPad(activeInput.sid, types[nIdx], sysConfig[`max${types[nIdx].toUpperCase()}`] || 15);
-        } else {
-            const curIdx = currentStudents.findIndex(s => s.id === activeInput.sid);
-            if(curIdx < currentStudents.length - 1) {
-                openPad(currentStudents[curIdx+1].id, types[0], sysConfig[`max${types[0].toUpperCase()}`] || 15);
-            } else { closePad(); }
+        if(nIdx < types.length) openPad(activeInput.sid, types[nIdx], sysConfig[`max${types[nIdx].toUpperCase()}`]);
+        else {
+            const curI = currentStudents.findIndex(s => s.id === activeInput.sid);
+            if(curI < currentStudents.length - 1) openPad(currentStudents[curI+1].id, types[0], sysConfig[`max${types[0].toUpperCase()}`]);
+            else closePad();
         }
     }
 
@@ -213,16 +152,14 @@
         document.getElementById('numPad').style.display = 'none';
         document.getElementById('setupArea').style.visibility = 'visible';
         document.getElementById('closeBtn').style.display = 'none';
-        document.querySelectorAll('.card').forEach(c => c.classList.remove('active-row'));
-        document.querySelectorAll('.score-sel').forEach(i => i.classList.remove('active-input'));
     }
 
     function fillAllColumn() {
         const val = document.getElementById(`inp_${activeInput.sid}_${activeInput.type}`).value;
         if(val === "") return;
         currentStudents.forEach(s => {
-            const trgt = document.getElementById(`inp_${s.id}_${activeInput.type}`);
-            if(trgt) { trgt.value = val; trgt.classList.add('saved'); saveToFirebase(s.id, activeInput.type, val); }
+            const t = document.getElementById(`inp_${s.id}_${activeInput.type}`);
+            if(t) { t.value = val; t.classList.add('saved'); saveToFirebase(s.id, activeInput.type, val); }
         });
     }
 </script>
