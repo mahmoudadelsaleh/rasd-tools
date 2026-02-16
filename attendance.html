@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>سجل الغياب الذكي | UniversityHub</title>
+    <script src="config.js"></script> <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <style>
+        :root { --navy: #0a192f; --gold: #c5a059; --red: #ef4444; --bg: #f8fafc; }
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--bg); margin: 0; }
+        .header { background: var(--navy); color: white; padding: 15px 20px; border-bottom: 3px solid var(--gold); display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 1000; }
+        .container { padding: 20px; }
+        .toolbar { background: white; padding: 15px; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+        
+        .table-container { background: white; border-radius: 12px; overflow: auto; max-height: 70vh; border: 1px solid #e2e8f0; }
+        table { width: 100%; border-collapse: separate; border-spacing: 0; }
+        
+        /* تثبيت عمود الاسم */
+        th:first-child, td:first-child { position: sticky; right: 0; z-index: 20; background: #fff; border-left: 2px solid var(--gold); min-width: 180px; }
+        th:first-child { z-index: 30; background: #f1f5f9; }
+
+        th { background: #f1f5f9; padding: 12px; border: 1px solid #cbd5e1; font-size: 12px; white-space: nowrap; }
+        td { border: 1px solid #e2e8f0; padding: 10px; text-align: center; font-weight: bold; }
+
+        /* حالة الخلايا */
+        .day-cell { cursor: pointer; transition: 0.2s; width: 40px; height: 40px; font-size: 10px; }
+        .day-cell.absent { background-color: var(--red) !important; color: white; position: relative; }
+        .day-cell.absent::after { content: 'غ'; }
+        .day-cell.disabled { cursor: not-allowed; background-color: #f1f5f9; opacity: 0.6; }
+        .day-cell.active { border: 2px solid var(--navy); box-shadow: inset 0 0 5px rgba(0,0,0,0.1); }
+        
+        .total-absent { color: var(--red); font-weight: 800; background: #fff1f2; }
+        
+        button { padding: 10px 18px; border-radius: 8px; border: none; cursor: pointer; font-weight: bold; transition: 0.3s; }
+        .btn-navy { background: var(--navy); color: var(--gold); }
+        .btn-gold { background: var(--gold); color: var(--navy); }
+        .btn-pdf { background: #065f46; color: white; }
+        select { padding: 10px; border-radius: 8px; border: 1px solid #cbd5e1; }
+        
+        .toggle-status { font-size: 12px; padding: 5px 10px; border-radius: 20px; background: #e2e8f0; }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <div style="font-weight: 800;">📅 سجل الغياب الرقمي</div>
+    <div id="currentDayInfo" style="font-size: 14px; color: var(--gold);"></div>
+    <a href="manage-data.html" style="color:white; text-decoration:none; font-size:14px;">العودة للإدارة ⬅️</a>
+</div>
+
+<div class="container">
+    <div class="toolbar">
+        <select id="gradeSel" onchange="loadStudentsForAttendance()"><option value="">اختر الصف...</option></select>
+        <select id="classSel" onchange="loadStudentsForAttendance()"><option value="">كل الفصول</option></select>
+        <button class="btn-gold" id="btnToggleManual" onclick="toggleManualMode()">🔓 تنشيط التعديل اليدوي</button>
+        <button class="btn-pdf" onclick="exportAttendancePDF()">📥 تصدير PDF للفترة</button>
+        <span class="toggle-status" id="modeStatus">الوضع الحالي: اليوم فقط</span>
+    </div>
+
+    <div class="table-container" id="pdfSection">
+        <table id="attendanceTable">
+            <thead id="atHead"></thead>
+            <tbody id="atBody"></tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    let students = [];
+    let attendanceData = {};
+    let manualMode = false;
+    const startDate = new Date(2026, 1, 8); // 8 فبراير 2026
+    const today = new Date();
+    today.setHours(0,0,0,0);
+
+    window.onload = async () => {
+        // تحميل الإعدادات من Firestore
+        const doc = await db.collection('system').doc('config').get();
+        if(doc.exists) {
+            doc.data().grades.forEach(g => document.getElementById('gradeSel').innerHTML += `<option value="${g.name}">${g.name}</option>`);
+        }
+        document.getElementById('currentDayInfo').innerText = `اليوم: ${today.toLocaleDateString('ar-EG', {weekday:'long', day:'numeric', month:'long'})}`;
+    };
+
+    async function loadStudentsForAttendance() {
+        const grade = document.getElementById('gradeSel').value;
+        const cls = document.getElementById('classSel').value;
+        if(!grade) return;
+
+        const gNum = grade.match(/\d+/)[0];
+        const sSnap = await db.collection('students').get();
+        students = sSnap.docs.map(d => ({id:d.id, ...d.data()}))
+                            .filter(s => s.classCode.startsWith(gNum + '/'))
+                            .sort((a,b) => a.sortOrder - b.sortOrder);
+        if(cls) students = students.filter(s => s.classCode === cls);
+
+        // تحميل بيانات الغياب من Firestore
+        const aSnap = await db.collection('attendance').where('grade', '==', grade).get();
+        attendanceData = {};
+        aSnap.forEach(doc => attendanceData[doc.id] = doc.data());
+
+        renderAttendanceTable();
+    }
+
+    function renderAttendanceTable() {
+        const head = document.getElementById('atHead');
+        const body = document.getElementById('atBody');
+        
+        let dates = generateAcademicDates();
+        
+        // بناء الهيدر
+        let hRow = `<tr><th>اسم الطالب</th>`;
+        dates.forEach(d => {
+            let dateStr = d.toISOString().split('T')[0];
+            let isToday = d.getTime() === today.getTime();
+            hRow += `<th class="${isToday ? 'active' : ''}">${d.toLocaleDateString('ar-EG', {day:'numeric', month:'short'})}<br>${d.toLocaleDateString('ar-EG', {weekday:'short'})}</th>`;
+        });
+        hRow += `<th>إجمالي الغياب</th></tr>`;
+        head.innerHTML = hRow;
+
+        // بناء الصفوف
+        body.innerHTML = students.map(st => {
+            let total = 0;
+            let cells = dates.map(d => {
+                let dateKey = d.toISOString().split('T')[0];
+                let isAbsent = attendanceData[dateKey]?.[st.id] || false;
+                if(isAbsent) total++;
+                
+                let isToday = d.getTime() === today.getTime();
+                let isDisabled = !manualMode && !isToday;
+                
+                return `<td class="day-cell ${isAbsent ? 'absent' : ''} ${isDisabled ? 'disabled' : ''} ${isToday ? 'active' : ''}" 
+                            onclick="markAttendance('${st.id}', '${dateKey}', this, ${isDisabled})"></td>`;
+            }).join('');
+
+            return `<tr><td>${st.name}</td>${cells}<td class="total-absent" id="total-${st.id}">${total}</td></tr>`;
+        }).join('');
+    }
+
+    function generateAcademicDates() {
+        let dates = [];
+        let curr = new Date(startDate);
+        // توليد لـ 6 أسابيع (فبراير ومارس) كمثال
+        for(let i=0; i<45; i++) {
+            let day = curr.getDay(); // 0 الأحد، 4 الخميس
+            if(day >= 0 && day <= 4) { // من الأحد (0) إلى الخميس (4) حسب جافا سكريبت الأحد هو 0
+                dates.push(new Date(curr));
+            }
+            curr.setDate(curr.getDate() + 1);
+        }
+        return dates;
+    }
+
+    async function markAttendance(sid, dateKey, el, isDisabled) {
+        if(isDisabled) return;
+
+        const isAbsent = !el.classList.contains('absent');
+        el.classList.toggle('absent');
+
+        // تحديث الإجمالي في الجدول
+        let totalEl = document.getElementById(`total-${sid}`);
+        let currentTotal = parseInt(totalEl.innerText);
+        totalEl.innerText = isAbsent ? currentTotal + 1 : currentTotal - 1;
+
+        // حفظ في Firestore
+        if(!attendanceData[dateKey]) attendanceData[dateKey] = { grade: document.getElementById('gradeSel').value };
+        attendanceData[dateKey][sid] = isAbsent;
+
+        await db.collection('attendance').doc(dateKey).set(attendanceData[dateKey], {merge: true});
+    }
+
+    function toggleManualMode() {
+        manualMode = !manualMode;
+        document.getElementById('btnToggleManual').innerText = manualMode ? "🔒 تعطيل التعديل اليدوي" : "🔓 تنشيط التعديل اليدوي";
+        document.getElementById('modeStatus').innerText = manualMode ? "الوضع الحالي: تعديل حر" : "الوضع الحالي: اليوم فقط";
+        renderAttendanceTable();
+    }
+
+    function exportAttendancePDF() {
+        const element = document.getElementById('pdfSection');
+        const opt = {
+            margin: 10,
+            filename: `غياب_${document.getElementById('gradeSel').value}.pdf`,
+            image: { type: 'jpeg', quality: 0.98 },
+            html2canvas: { scale: 2, useCORS: true },
+            jsPDF: { unit: 'mm', format: 'a3', orientation: 'landscape' }
+        };
+        html2pdf().set(opt).from(element).save();
+    }
+</script>
+</body>
+</html>
