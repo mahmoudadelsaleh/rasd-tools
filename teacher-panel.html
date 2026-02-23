@@ -7,10 +7,9 @@
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
     <style>
-        :root { --navy: #0a192f; --gold: #c5a059; --bg: #f1f5f9; --success: #10b981; }
+        :root { --navy: #0a192f; --gold: #c5a059; --bg: #f1f5f9; --success: #10b981; --danger: #ef4444; }
         body { font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--bg); margin: 0; padding-bottom: 300px; overscroll-behavior-y: contain; }
-        
-        /* الهيدر الفخم */
+
         .academic-header {
             background: var(--navy); color: white; padding: 15px; 
             display: flex; justify-content: space-between; align-items: center;
@@ -19,8 +18,7 @@
         .container { padding: 12px; max-width: 600px; margin: auto; }
         .card { background: white; border-radius: 12px; padding: 15px; margin-bottom: 10px; border: 1px solid #e2e8f0; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
         .active-row { border: 2px solid #3b82f6; background: #eff6ff; transform: scale(1.02); transition: 0.2s; }
-        
-        /* الكيبورد الذكي للموبايل */
+
         .smart-keyboard { 
             position: fixed; bottom: 20px; left: 10px; right: 10px; 
             background: #e2e8f0; padding: 10px; display: none; 
@@ -28,10 +26,19 @@
             z-index: 2000; border-radius: 15px; border: 2px solid var(--gold);
         }
         .key-btn { background: white; border-radius: 8px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; height: 45px; border: 1px solid #94a3b8; }
-        
+
         .score-sel { width: 45px; height: 40px; font-weight: bold; text-align: center; border-radius: 8px; border: 1px solid #cbd5e1; background: #fff; font-size: 16px; cursor: pointer; }
         .score-sel.saved { border-color: var(--success); background: #f0fdf4; color: #15803d; }
         select { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #cbd5e1; font-weight: bold; margin-bottom: 10px; background: white; }
+
+        /* ستايل أيام الغياب */
+        .absence-zone { display: flex; gap: 4px; margin-top: 10px; justify-content: center; border-top: 1px dashed #ddd; padding-top: 8px; }
+        .day-chip { 
+            font-size: 10px; padding: 4px 8px; border-radius: 6px; 
+            background: var(--success); color: white; cursor: pointer; 
+            transition: 0.3s; user-select: none; font-weight: bold;
+        }
+        .day-chip.absent { background: var(--danger); }
     </style>
 </head>
 <body>
@@ -59,14 +66,10 @@
 
     const tId = sessionStorage.getItem('userEmail');
     let currentStudents = [], activeInput = null, sysConfig = {}, teacherInfo = {};
+    const daysArr = ['السبت', 'الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس'];
 
     window.onload = async () => {
-        // حارس الهوية: إذا كان الداخل "ماستر" نقوم بتنظيف الجلسة فوراً للسماح للمعلم بالدخول
-        if(!tId || tId === "almas2021") {
-            sessionStorage.clear();
-            window.location.href = "index.html";
-            return;
-        }
+        if(!tId || tId === "almas2021") { sessionStorage.clear(); window.location.href = "index.html"; return; }
 
         try {
             const confDoc = await db.collection('system').doc('config').get();
@@ -97,28 +100,53 @@
         const classCode = fullClassName.split(' - ')[1].trim(); 
 
         const sSnap = await db.collection('students').where('classCode', '==', classCode).get();
-        if (sSnap.empty) { document.getElementById('studentList').innerHTML = `<p style="text-align:center;">⚠️ لا يوجد طلاب بكود ${classCode}</p>`; return; }
+        if (sSnap.empty) { document.getElementById('studentList').innerHTML = `<p style="text-align:center;">⚠️ لا يوجد طلاب</p>`; return; }
 
         currentStudents = sSnap.docs.map(doc => ({id: doc.id, ...doc.data()})).sort((a,b) => a.sortOrder - b.sortOrder);
+        
         const gSnap = await db.collection('grades').where('teacher','==',tId).where('week','==',week).where('subject','==',sub).get();
-        const scs = {}; gSnap.forEach(d => { const dta = d.data(); if(!scs[dta.sid]) scs[dta.sid] = {}; scs[dta.sid][dta.type] = dta.score; });
+        const scs = {}; gSnap.forEach(d => { 
+            const dta = d.data(); 
+            if(!scs[dta.sid]) scs[dta.sid] = { scores: {}, attendance: [] };
+            if(dta.type === 'attendance') scs[dta.sid].attendance = dta.days || [];
+            else scs[dta.sid].scores[dta.type] = dta.score; 
+        });
         renderList(scs, week);
     }
 
-    function renderList(scores, week) {
+    function renderList(data, week) {
         let html = '';
         currentStudents.forEach((s) => {
-            const sc = scores[s.id] || {};
-            html += `<div class="card" id="row_${s.id}"><div style="display:flex; justify-content:space-between; align-items:center;">
-                <span style="font-size:13px; font-weight:600;">${s.sortOrder}. ${s.name}</span>
-                <div style="display:flex; gap:5px;">`;
-            if(week.startsWith('ex')) html += drawInp(s.id, 'exam', sysConfig.maxExam, sc.exam, 'اختبار');
-            else {
+            const studentData = data[s.id] || { scores: {}, attendance: [] };
+            const sc = studentData.scores;
+            const att = studentData.attendance;
+
+            html += `<div class="card" id="row_${s.id}">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <span style="font-size:13px; font-weight:600;">${s.sortOrder}. ${s.name}</span>
+                    <div style="display:flex; gap:5px;">`;
+            
+            if(week.startsWith('ex')) {
+                html += drawInp(s.id, 'exam', sysConfig.maxExam, sc.exam, 'اختبار');
+            } else {
                 html += drawInp(s.id, 't', sysConfig.maxT, sc.t, 'ت');
                 html += drawInp(s.id, 'v', sysConfig.maxV, sc.v, 'و');
                 html += drawInp(s.id, 's', sysConfig.maxS, sc.s, 'س');
             }
-            html += `</div></div></div>`;
+
+            html += `</div></div>`;
+            
+            // إضافة بطاقات أيام الغياب (تظهر فقط في الأسابيع العادية وليس الاختبارات)
+            if(!week.startsWith('ex')) {
+                html += `<div class="absence-zone">`;
+                daysArr.forEach(day => {
+                    const isAbsent = att.includes(day);
+                    html += `<div class="day-chip ${isAbsent?'absent':''}" onclick="toggleAbsence('${s.id}', '${day}', this)">${day}</div>`;
+                });
+                html += `</div>`;
+            }
+
+            html += `</div>`;
         });
         document.getElementById('studentList').innerHTML = html;
     }
@@ -141,6 +169,43 @@
                  <button onclick="closePad()" style="grid-column:span 2; background:var(--navy); color:var(--gold); border:none; border-radius:8px; font-weight:bold;">تم</button>`;
         pad.innerHTML = keys;
         window.scrollTo({ top: document.getElementById(`row_${sid}`).offsetTop - 80, behavior: 'smooth' });
+    }
+
+    async function toggleAbsence(sid, day, el) {
+        el.classList.toggle('absent');
+        const card = document.getElementById(`row_${sid}`);
+        const absentDays = Array.from(card.querySelectorAll('.day-chip.absent')).map(d => d.innerText);
+        
+        const sub = document.getElementById('vSubject').value;
+        const week = document.getElementById('vWeek').value;
+        
+        // حفظ الغياب
+        await db.collection('grades').doc(`${sid}_${week}_attendance_${sub}`).set({
+            sid, week, type: 'attendance', subject: sub, days: absentDays, teacher: tId, timestamp: Date.now()
+        }, {merge:true});
+
+        applyPenaltyLogic(sid, absentDays);
+    }
+
+    function applyPenaltyLogic(sid, absentDays) {
+        // منطق الخصم: درجتين لكل يوم غياب عدا السبت
+        const penaltyDays = absentDays.filter(d => d !== 'السبت').length;
+        const penaltyAmount = penaltyDays * 2;
+        
+        const sInput = document.getElementById(`inp_${sid}_s`);
+        const tInput = document.getElementById(`inp_${sid}_t`);
+        const vInput = document.getElementById(`inp_${sid}_v`);
+
+        if(absentDays.length >= 6) { // غياب الأسبوع كاملاً
+            if(sInput) { sInput.value = 0; saveToFirebase(sid, 's', 0); }
+            if(tInput) { tInput.value = 0; saveToFirebase(sid, 't', 0); }
+            if(vInput) { vInput.value = 0; saveToFirebase(sid, 'v', 0); }
+        } else {
+            // خصم من السلوك فقط
+            let currentS = parseInt(sysConfig.maxS || 10);
+            let newS = Math.max(0, currentS - penaltyAmount);
+            if(sInput) { sInput.value = newS; sInput.classList.add('saved'); saveToFirebase(sid, 's', newS); }
+        }
     }
 
     function inputValue(val) {
@@ -171,6 +236,7 @@
     }
 
     function closePad() { document.getElementById('numPad').style.display = 'none'; }
+    
     function fillAllColumn() {
         const val = document.getElementById(`inp_${activeInput.sid}_${activeInput.type}`).value;
         if(val === "") return;
@@ -179,6 +245,7 @@
             if(t) { t.value = val; t.classList.add('saved'); saveToFirebase(s.id, activeInput.type, val); }
         });
     }
+
     function logout() { if(confirm("هل تود تسجيل الخروج؟")) { sessionStorage.clear(); window.location.href="index.html"; } }
 </script>
 </body>
