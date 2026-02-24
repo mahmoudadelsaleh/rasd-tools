@@ -40,7 +40,6 @@
             padding: 45px 25px; 
             text-align: center; 
             border-top: 6px solid var(--gold); 
-            position: relative;
         }
 
         .brand-logo { 
@@ -88,19 +87,10 @@
             font-size: 18px; 
             cursor: pointer; 
             transition: 0.3s;
-            box-shadow: 0 4px 12px rgba(10, 25, 47, 0.2);
         }
 
         button:active { 
             transform: scale(0.98); 
-        }
-
-        .welcome-ov { 
-            display: none; 
-            font-size: 22px; 
-            font-weight: bold; 
-            color: var(--navy); 
-            animation: fadeIn 0.5s forwards; 
         }
 
         #msg { 
@@ -111,9 +101,32 @@
             min-height: 20px; 
         }
 
-        @keyframes fadeIn { 
-            from { opacity: 0; transform: translateY(10px); } 
-            to { opacity: 1; transform: translateY(0); } 
+        .welcome-ov { 
+            display: none; 
+            font-size: 22px; 
+            font-weight: bold; 
+            color: var(--navy); 
+            animation: fadeIn 0.5s; 
+        }
+
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        /* زر تثبيت التطبيق المخصص */
+        #install-prompt {
+            display: none;
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--gold);
+            color: var(--navy);
+            padding: 12px 25px;
+            border-radius: 50px;
+            font-weight: bold;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            z-index: 1000;
+            cursor: pointer;
+            border: none;
         }
     </style>
 </head>
@@ -132,9 +145,10 @@
             <button onclick="handleLogin()">دخول المنصة الأكاديمية 🏛️</button>
             <p id="msg"></p>
         </div>
-
         <div id="welcome_ui" class="welcome-ov"></div>
     </div>
+
+    <button id="install-prompt">تثبيت التطبيق على الموبايل 📲</button>
 
 <script>
     // 1. إعدادات Firebase
@@ -145,7 +159,7 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
-    // 2. منطق تسجيل الدخول
+    // 2. دالة تسجيل الدخول الأساسية
     async function handleLogin() {
         const uInput = document.getElementById('user').value.trim();
         const pInput = document.getElementById('pass').value.trim();
@@ -161,9 +175,7 @@
         sessionStorage.clear();
 
         try {
-            // البحث في مجموعة المديرين
             const adminQuery = await db.collection('admins').where('username', '==', uInput).get();
-
             if(!adminQuery.empty) {
                 const adminData = adminQuery.docs[0].data();
                 if(adminData.pass && adminData.pass === pInput) {
@@ -175,7 +187,6 @@
                 }
             } 
 
-            // البحث في مجموعة المعلمين (باستخدام ID الوثيقة)
             const teacherDoc = await db.collection('teachers').doc(uInput).get();
             if(teacherDoc.exists) {
                 const tData = teacherDoc.data();
@@ -192,67 +203,48 @@
             msg.innerText = "❌ اسم المستخدم أو كلمة المرور غير صحيحة";
 
         } catch (error) {
-            console.error("Login Error:", error);
-            msg.style.color = "#b91c1c";
             msg.innerText = "📡 فشل الاتصال.. تأكد من الإنترنت";
         }
     }
 
-    // 3. دالة النجاح والتحويل
     function loginSuccess(target, name) {
         document.getElementById('login_ui').style.display = 'none';
         const w = document.getElementById('welcome_ui');
         w.innerHTML = `👋 مرحباً بك<br><span style="color:var(--gold)">${name}</span>`;
         w.style.display = 'block';
-
-        setTimeout(() => {
-            window.location.href = target;
-        }, 1200);
+        setTimeout(() => window.location.href = target, 1200);
     }
 
-    // 4. تسجيل الـ Service Worker لتمكين تثبيت التطبيق
+    // 3. كود PWA مع إجبار التحديث والزر المخصص
+    let deferredPrompt;
+    const installBtn = document.getElementById('install-prompt');
+
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-            // المسار المناسب لـ GitHub Pages
-            navigator.serviceWorker.register('/rasd-tools/sw.js', { scope: '/rasd-tools/' })
-                .then(reg => console.log('✅ PWA Active'))
-                .catch(err => console.error('❌ PWA Error:', err));
+            navigator.serviceWorker.register('/rasd-tools/sw.js', {scope: '/rasd-tools/'})
+            .then(reg => {
+                console.log('SW Registered');
+                reg.update(); // إجبار البحث عن تحديثات فوراً
+            });
         });
     }
-</script>
-<div id="installBtn" style="display:none; position:fixed; bottom:20px; right:20px; left:20px; background:var(--gold); color:var(--navy); padding:15px; text-align:center; border-radius:12px; font-weight:bold; cursor:pointer; z-index:9999; box-shadow:0 10px 20px rgba(0,0,0,0.2);">
-    اضغط هنا لتثبيت التطبيق على هاتفك 📲
-</div>
-
-<script>
-    let deferredPrompt;
-    const installBtn = document.getElementById('installBtn');
 
     window.addEventListener('beforeinstallprompt', (e) => {
-        // منع المتصفح من إظهار النافذة التلقائية
         e.preventDefault();
-        // حفظ الحدث لإطلاقه لاحقاً
         deferredPrompt = e;
-        // إظهار الزر المخصص للمستخدم
-        installBtn.style.display = 'block';
+        installBtn.style.display = 'block'; // إظهار زر التثبيت
 
-        installBtn.addEventListener('click', async () => {
-            // إخفاء الزر
+        installBtn.addEventListener('click', () => {
             installBtn.style.display = 'none';
-            // إظهار نافذة التثبيت
             deferredPrompt.prompt();
-            // معرفة قرار المستخدم
-            const { outcome } = await deferredPrompt.userChoice;
-            console.log(`User response to install: ${outcome}`);
-            deferredPrompt = null;
+            deferredPrompt.userChoice.then((choiceResult) => {
+                if (choiceResult.outcome === 'accepted') {
+                    console.log('User accepted install');
+                }
+                deferredPrompt = null;
+            });
         });
     });
-
-    window.addEventListener('appinstalled', () => {
-        installBtn.style.display = 'none';
-        console.log('تم تثبيت التطبيق بنجاح!');
-    });
 </script>
-
 </body>
 </html>
