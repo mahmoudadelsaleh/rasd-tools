@@ -1,10 +1,9 @@
-const cacheName = 'khidma-school-v2';
+const cacheName = 'khidma-school-v3';
 const assets = [
   './',
   './index.html',
   './manifest.json',
-  './icon-192×192.png',
-  './icon-512×512.png'
+  './icon-180x180.png'
 ];
 
 self.addEventListener('install', evt => {
