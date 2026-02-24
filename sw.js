@@ -1,15 +1,18 @@
-const cacheName = 'khidma-school-v3';
+const cacheName = 'khidma-school-v10';
 const assets = [
-  './',
-  './index.html',
-  './manifest.json',
-  './icon-180x180.png'
+  '/rasd-tools/',
+  '/rasd-tools/index.html',
+  '/rasd-tools/manifest.json',
+  '/rasd-tools/icon-180x180.png',
+  '/rasd-tools/icon-192x192.png',
+  '/rasd-tools/icon-512x512.png'
 ];
 
 self.addEventListener('install', evt => {
   evt.waitUntil(
     caches.open(cacheName).then(cache => {
-      cache.addAll(assets);
+      console.log('Caching assets');
+      return cache.addAll(assets);
     })
   );
 });
