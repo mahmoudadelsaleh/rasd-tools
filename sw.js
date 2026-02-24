@@ -1,51 +1,21 @@
-// اسم النسخة لتحديث التخزين عند الحاجة
-const CACHE_NAME = 'rasd-v2026-cache';
-
-// قائمة الملفات التي سيتم تخزينها لتعمل بدون إنترنت
-const urlsToCache = [
+const cacheName = 'khidma-school-v1';
+const assets = [
   './',
-  './index.html',
-  './admin.html',
-  './teacher.html',
-  './manifest.json',
-  './icon-180x180.png',
-  './icon-192x192.png',
-  './icon-512x512.png'
+  './index.html'
 ];
 
-// مرحلة التثبيت: تخزين الملفات الأساسية
-self.addEventListener('install', event => {
-  event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then(cache => {
-        console.log('تم فتح التخزين المؤقت وتخزين الأيقونات والملفات');
-        return cache.addAll(urlsToCache);
-      })
-  );
-});
-
-// مرحلة التفعيل: حذف النسخ القديمة من التخزين
-self.addEventListener('activate', event => {
-  event.waitUntil(
-    caches.keys().then(cacheNames => {
-      return Promise.all(
-        cacheNames.map(cacheName => {
-          if (cacheName !== CACHE_NAME) {
-            return caches.delete(cacheName);
-          }
-        })
-      );
+self.addEventListener('install', evt => {
+  evt.waitUntil(
+    caches.open(cacheName).then(cache => {
+      cache.addAll(assets);
     })
   );
 });
 
-// جلب الملفات: استدعاء الملف من التخزين إذا لم يتوفر إنترنت
-self.addEventListener('fetch', event => {
-  event.respondWith(
-    caches.match(event.request)
-      .then(response => {
-        // إذا وجد الملف في التخزين (Cache) نرجعه، وإلا نطلبه من الشبكة
-        return response || fetch(event.request);
-      })
+self.addEventListener('fetch', evt => {
+  evt.respondWith(
+    caches.match(evt.request).then(cacheRes => {
+      return cacheRes || fetch(evt.request);
+    })
   );
 });
