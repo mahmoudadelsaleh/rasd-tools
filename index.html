@@ -5,59 +5,139 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>مدرسة الخدمة الثانوية العامة | تسجيل دخول</title>
     
-    <link rel="manifest" href="manifest.json">
+    <link rel="manifest" href="/rasd-tools/manifest.json">
     <meta name="theme-color" content="#0a192f">
-    <link rel="apple-touch-icon" href="icon-180x180.png">
+    <link rel="apple-touch-icon" href="/rasd-tools/icon-180x180.png">
 
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
     
     <style>
-        :root { --navy: #0a192f; --gold: #c5a059; --white: #ffffff; }
+        :root { 
+            --navy: #0a192f; 
+            --gold: #c5a059; 
+            --white: #ffffff; 
+            --bg: #f4f7f9;
+        }
+
         body { 
             font-family: 'Segoe UI', Tahoma, sans-serif; 
-            background: #f4f7f9; margin: 0; 
-            display: flex; justify-content: center; align-items: center; 
-            height: 100vh; overflow: hidden; 
+            background: var(--bg); 
+            margin: 0; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            height: 100vh; 
+            overflow: hidden; 
         }
+
         .login-wrap { 
-            width: 92%; max-width: 400px; background: var(--white); 
-            border-radius: 20px; box-shadow: 0 15px 35px rgba(0,0,0,0.1); 
-            padding: 45px 25px; text-align: center; border-top: 6px solid var(--gold); 
+            width: 92%; 
+            max-width: 400px; 
+            background: var(--white); 
+            border-radius: 20px; 
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1); 
+            padding: 45px 25px; 
+            text-align: center; 
+            border-top: 6px solid var(--gold); 
+            position: relative;
         }
-        .brand-logo { font-size: 24px; font-weight: 800; color: var(--navy); margin-bottom: 30px; line-height: 1.4; }
-        .brand-logo span { color: var(--gold); display: block; font-size: 16px; margin-top: 5px; }
+
+        .brand-logo { 
+            font-size: 24px; 
+            font-weight: 800; 
+            color: var(--navy); 
+            margin-bottom: 30px; 
+            line-height: 1.4; 
+        }
+
+        .brand-logo span { 
+            color: var(--gold); 
+            display: block; 
+            font-size: 16px; 
+            margin-top: 5px; 
+            font-weight: normal;
+        }
+
         input { 
-            width: 100%; padding: 15px; margin-bottom: 15px; 
-            border: 1px solid #e2e8f0; border-radius: 12px; 
-            font-size: 16px; box-sizing: border-box; transition: 0.3s; text-align: center;
+            width: 100%; 
+            padding: 15px; 
+            margin-bottom: 15px; 
+            border: 1px solid #e2e8f0; 
+            border-radius: 12px; 
+            font-size: 16px; 
+            box-sizing: border-box; 
+            transition: 0.3s; 
+            text-align: center;
         }
-        input:focus { border-color: var(--gold); outline: none; box-shadow: 0 0 0 3px rgba(197,160,89,0.1); }
+
+        input:focus { 
+            border-color: var(--gold); 
+            outline: none; 
+            box-shadow: 0 0 0 3px rgba(197,160,89,0.1); 
+        }
+
         button { 
-            width: 100%; padding: 16px; background: var(--navy); 
-            color: var(--gold); border: none; border-radius: 12px; 
-            font-weight: bold; font-size: 18px; cursor: pointer; transition: 0.3s;
+            width: 100%; 
+            padding: 16px; 
+            background: var(--navy); 
+            color: var(--gold); 
+            border: none; 
+            border-radius: 12px; 
+            font-weight: bold; 
+            font-size: 18px; 
+            cursor: pointer; 
+            transition: 0.3s;
+            box-shadow: 0 4px 12px rgba(10, 25, 47, 0.2);
         }
-        button:active { transform: scale(0.98); }
-        .welcome-ov { display: none; font-size: 22px; font-weight: bold; color: var(--navy); animation: fadeIn 0.5s; }
-        #msg { color: #b91c1c; margin-top: 15px; font-size: 14px; font-weight: bold; min-height: 20px; }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        button:active { 
+            transform: scale(0.98); 
+        }
+
+        .welcome-ov { 
+            display: none; 
+            font-size: 22px; 
+            font-weight: bold; 
+            color: var(--navy); 
+            animation: fadeIn 0.5s forwards; 
+        }
+
+        #msg { 
+            color: #b91c1c; 
+            margin-top: 15px; 
+            font-size: 14px; 
+            font-weight: bold; 
+            min-height: 20px; 
+        }
+
+        @keyframes fadeIn { 
+            from { opacity: 0; transform: translateY(10px); } 
+            to { opacity: 1; transform: translateY(0); } 
+        }
     </style>
 </head>
 <body>
 
     <div class="login-wrap">
         <div id="login_ui">
-            <div class="brand-logo">مدرسة الخدمة الثانوية العامة<span>منظومة الرصد والكنترول v2026</span></div>
-            <input type="text" id="user" placeholder="اسم المستخدم">
-            <input type="password" id="pass" placeholder="كلمة المرور">
+            <div class="brand-logo">
+                مدرسة الخدمة الثانوية العامة
+                <span>منظومة الرصد والكنترول v2026</span>
+            </div>
+
+            <input type="text" id="user" placeholder="اسم المستخدم" autocomplete="username">
+            <input type="password" id="pass" placeholder="كلمة المرور" autocomplete="current-password">
+
             <button onclick="handleLogin()">دخول المنصة الأكاديمية 🏛️</button>
             <p id="msg"></p>
         </div>
+
         <div id="welcome_ui" class="welcome-ov"></div>
     </div>
 
 <script>
+    // 1. إعدادات Firebase
     const firebaseConfig = { 
         apiKey: "AIzaSyBePGZiqMPmZQdg36jZ4Rkdtd7OISxmob8", 
         projectId: "rasd-tools" 
@@ -65,6 +145,7 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
+    // 2. منطق تسجيل الدخول
     async function handleLogin() {
         const uInput = document.getElementById('user').value.trim();
         const pInput = document.getElementById('pass').value.trim();
@@ -75,11 +156,14 @@
             return;
         }
 
+        msg.style.color = "#64748b";
         msg.innerText = "⏳ جاري التحقق من الهوية...";
         sessionStorage.clear();
 
         try {
+            // البحث في مجموعة المديرين
             const adminQuery = await db.collection('admins').where('username', '==', uInput).get();
+
             if(!adminQuery.empty) {
                 const adminData = adminQuery.docs[0].data();
                 if(adminData.pass && adminData.pass === pInput) {
@@ -91,6 +175,7 @@
                 }
             } 
 
+            // البحث في مجموعة المعلمين (باستخدام ID الوثيقة)
             const teacherDoc = await db.collection('teachers').doc(uInput).get();
             if(teacherDoc.exists) {
                 const tData = teacherDoc.data();
@@ -102,26 +187,36 @@
                     return;
                 }
             }
+
+            msg.style.color = "#b91c1c";
             msg.innerText = "❌ اسم المستخدم أو كلمة المرور غير صحيحة";
+
         } catch (error) {
-            msg.innerText = "📡 فشل الاتصال بالخادم";
+            console.error("Login Error:", error);
+            msg.style.color = "#b91c1c";
+            msg.innerText = "📡 فشل الاتصال.. تأكد من الإنترنت";
         }
     }
 
+    // 3. دالة النجاح والتحويل
     function loginSuccess(target, name) {
         document.getElementById('login_ui').style.display = 'none';
         const w = document.getElementById('welcome_ui');
         w.innerHTML = `👋 مرحباً بك<br><span style="color:var(--gold)">${name}</span>`;
         w.style.display = 'block';
-        setTimeout(() => window.location.href = target, 1200);
+
+        setTimeout(() => {
+            window.location.href = target;
+        }, 1200);
     }
 
-    // تسجيل الـ Service Worker
+    // 4. تسجيل الـ Service Worker لتمكين تثبيت التطبيق
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-            navigator.serviceWorker.register('./sw.js')
-                .then(reg => console.log('PWA Ready'))
-                .catch(err => console.log('PWA Error', err));
+            // المسار المناسب لـ GitHub Pages
+            navigator.serviceWorker.register('/rasd-tools/sw.js', { scope: '/rasd-tools/' })
+                .then(reg => console.log('✅ PWA Active'))
+                .catch(err => console.error('❌ PWA Error:', err));
         });
     }
 </script>
