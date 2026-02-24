@@ -220,5 +220,39 @@
         });
     }
 </script>
+<div id="installBtn" style="display:none; position:fixed; bottom:20px; right:20px; left:20px; background:var(--gold); color:var(--navy); padding:15px; text-align:center; border-radius:12px; font-weight:bold; cursor:pointer; z-index:9999; box-shadow:0 10px 20px rgba(0,0,0,0.2);">
+    اضغط هنا لتثبيت التطبيق على هاتفك 📲
+</div>
+
+<script>
+    let deferredPrompt;
+    const installBtn = document.getElementById('installBtn');
+
+    window.addEventListener('beforeinstallprompt', (e) => {
+        // منع المتصفح من إظهار النافذة التلقائية
+        e.preventDefault();
+        // حفظ الحدث لإطلاقه لاحقاً
+        deferredPrompt = e;
+        // إظهار الزر المخصص للمستخدم
+        installBtn.style.display = 'block';
+
+        installBtn.addEventListener('click', async () => {
+            // إخفاء الزر
+            installBtn.style.display = 'none';
+            // إظهار نافذة التثبيت
+            deferredPrompt.prompt();
+            // معرفة قرار المستخدم
+            const { outcome } = await deferredPrompt.userChoice;
+            console.log(`User response to install: ${outcome}`);
+            deferredPrompt = null;
+        });
+    });
+
+    window.addEventListener('appinstalled', () => {
+        installBtn.style.display = 'none';
+        console.log('تم تثبيت التطبيق بنجاح!');
+    });
+</script>
+
 </body>
 </html>
