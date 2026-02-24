@@ -7,7 +7,7 @@
     
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#0a192f">
-    <link rel="apple-touch-icon" href="icon-192.png">
+    <link rel="apple-touch-icon" href="icon-180×180.png">
 
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
@@ -49,10 +49,8 @@
     <div class="login-wrap">
         <div id="login_ui">
             <div class="brand-logo">مدرسة الخدمة الثانوية العامة<span>منظومة الرصد والكنترول v2026</span></div>
-
             <input type="text" id="user" placeholder="اسم المستخدم">
             <input type="password" id="pass" placeholder="كلمة المرور">
-
             <button onclick="handleLogin()">دخول المنصة الأكاديمية 🏛️</button>
             <p id="msg"></p>
         </div>
@@ -83,7 +81,6 @@
 
         try {
             const adminQuery = await db.collection('admins').where('username', '==', uInput).get();
-
             if(!adminQuery.empty) {
                 const adminData = adminQuery.docs[0].data();
                 if(adminData.pass && adminData.pass === pInput) {
@@ -106,11 +103,8 @@
                     return;
                 }
             }
-
             msg.innerText = "❌ اسم المستخدم أو كلمة المرور غير صحيحة";
-
         } catch (error) {
-            console.error("Login Error:", error);
             msg.innerText = "📡 فشل الاتصال بالخادم";
         }
     }
@@ -123,11 +117,11 @@
         setTimeout(() => window.location.href = target, 1200);
     }
 
-    // تسجيل الـ Service Worker لتحويل الموقع لتطبيق
+    // تسجيل الخدمة (Service Worker)
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
             navigator.serviceWorker.register('sw.js')
-                .then(reg => console.log('PWA Active'))
+                .then(reg => console.log('PWA Ready'))
                 .catch(err => console.log('PWA Error', err));
         });
     }
