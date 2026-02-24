@@ -7,7 +7,7 @@
     
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#0a192f">
-    <link rel="apple-touch-icon" href="icon-180×180.png">
+    <link rel="apple-touch-icon" href="icon-180x180.png">
 
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
@@ -58,7 +58,6 @@
     </div>
 
 <script>
-    // إعدادات فايربيز
     const firebaseConfig = { 
         apiKey: "AIzaSyBePGZiqMPmZQdg36jZ4Rkdtd7OISxmob8", 
         projectId: "rasd-tools" 
@@ -117,10 +116,10 @@
         setTimeout(() => window.location.href = target, 1200);
     }
 
-    // تسجيل الخدمة (Service Worker)
+    // تسجيل الـ Service Worker
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-            navigator.serviceWorker.register('sw.js')
+            navigator.serviceWorker.register('./sw.js')
                 .then(reg => console.log('PWA Ready'))
                 .catch(err => console.log('PWA Error', err));
         });
