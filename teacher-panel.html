@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>لوحة المعلم الأكاديمية الذكية | v2026</title>
+    <title>لوحة المعلم الاحترافية | v2026</title>
     
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
@@ -15,66 +15,49 @@
         :root { --navy: #0a192f; --gold: #c5a059; --bg: #f1f5f9; --success: #10b981; --danger: #ef4444; --blue: #3b82f6; }
         body { font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--bg); margin: 0; padding-bottom: 300px; overscroll-behavior-y: contain; }
 
-        /* Header & Navigation */
         .academic-header {
             background: var(--navy); color: white; padding: 15px; 
             display: flex; justify-content: space-between; align-items: center;
             position: sticky; top: 0; z-index: 1000; border-bottom: 3px solid var(--gold);
         }
-        .nav-tabs { display: flex; gap: 5px; padding: 10px; background: white; sticky; top: 65px; z-index: 999; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        .nav-tabs button { flex: 1; padding: 12px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.3s; }
+        .nav-tabs { display: flex; gap: 5px; padding: 10px; background: white; position: sticky; top: 60px; z-index: 999; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .nav-tabs button { flex: 1; padding: 12px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
         .btn-active { background: var(--navy) !important; color: white !important; }
         .btn-inactive { background: #e2e8f0; color: #64748b; }
 
-        .container { padding: 12px; max-width: 800px; margin: auto; }
+        .container { padding: 12px; max-width: 95%; margin: auto; }
         .card { background: white; border-radius: 12px; padding: 15px; margin-bottom: 10px; border: 1px solid #e2e8f0; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-        .active-row { border: 2px solid var(--blue); background: #eff6ff; transform: scale(1.01); transition: 0.2s; }
+        
+        /* Table Styles for Report */
+        #reportPreview table { width: 100%; border-collapse: collapse; font-size: 11px; background: white; }
+        #reportPreview th, #reportPreview td { border: 1px solid #cbd5e1; padding: 4px; text-align: center; }
+        #reportPreview th { background: #f8fafc; color: var(--navy); }
+        .header-main { background: var(--navy) !important; color: white !important; }
+        .sub-head { background: #e2e8f0 !important; font-size: 9px; }
 
-        /* Smart Keyboard */
-        .smart-keyboard { 
-            position: fixed; bottom: 20px; left: 10px; right: 10px; 
-            background: #e2e8f0; padding: 10px; display: none; 
-            grid-template-columns: repeat(5, 1fr); gap: 6px; 
-            z-index: 2000; border-radius: 15px; border: 2px solid var(--gold);
-            box-shadow: 0 -5px 20px rgba(0,0,0,0.2);
-        }
+        /* Keyboard & Input */
+        .smart-keyboard { position: fixed; bottom: 20px; left: 10px; right: 10px; background: #e2e8f0; padding: 10px; display: none; grid-template-columns: repeat(5, 1fr); gap: 6px; z-index: 2000; border-radius: 15px; border: 2px solid var(--gold); }
         .key-btn { background: white; border-radius: 8px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; height: 45px; border: 1px solid #94a3b8; }
+        .score-sel { width: 40px; height: 35px; font-weight: bold; text-align: center; border-radius: 5px; border: 1px solid #cbd5e1; }
+        .score-sel.saved { background: #f0fdf4; border-color: var(--success); }
+        select, .num-input { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #cbd5e1; margin-bottom: 8px; }
 
-        /* Inputs & Selects */
-        .score-sel { width: 45px; height: 40px; font-weight: bold; text-align: center; border-radius: 8px; border: 1px solid #cbd5e1; background: #fff; font-size: 16px; cursor: pointer; }
-        .score-sel.saved { border-color: var(--success); background: #f0fdf4; color: #15803d; }
-        select, .num-input { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #cbd5e1; font-weight: bold; margin-bottom: 10px; background: white; }
-
-        /* Absence Zone */
-        .absence-zone { display: flex; gap: 4px; margin-top: 10px; justify-content: center; border-top: 1px dashed #ddd; padding-top: 8px; }
-        .day-chip { 
-            font-size: 10px; padding: 4px 8px; border-radius: 6px; 
-            background: var(--success); color: white; cursor: pointer; 
-            transition: 0.3s; user-select: none; font-weight: bold;
-        }
+        .absence-zone { display: flex; gap: 3px; margin-top: 8px; justify-content: center; }
+        .day-chip { font-size: 9px; padding: 3px 6px; border-radius: 4px; background: var(--success); color: white; cursor: pointer; }
         .day-chip.absent { background: var(--danger); }
-
-        /* Report Styles */
-        .report-settings { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; }
-        .weeks-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(70px, 1fr)); gap: 5px; margin: 10px 0; }
-        .week-item { font-size: 12px; background: #f8fafc; padding: 5px; border-radius: 5px; border: 1px solid #ddd; }
-        #reportPreview table { width: 100%; border-collapse: collapse; margin-top: 20px; background: white; font-size: 12px; }
-        #reportPreview th, #reportPreview td { border: 1px solid #cbd5e1; padding: 8px; text-align: center; }
-        #reportPreview th { background: var(--navy); color: white; }
-        .export-btns { display: flex; gap: 8px; margin-top: 15px; flex-wrap: wrap; }
-        .btn-exp { flex: 1; padding: 10px; border: none; border-radius: 8px; color: white; font-weight: bold; cursor: pointer; min-width: 100px; }
+        .weeks-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 5px; margin: 10px 0; }
     </style>
 </head>
 <body>
 
 <header class="academic-header">
-    <div>👨‍🏫 <b id="tName">جاري التحقق...</b></div>
-    <button onclick="logout()" style="background:var(--gold); color:var(--navy); border:none; padding:6px 15px; border-radius:8px; font-weight:bold; cursor:pointer;">خروج</button>
+    <div>👨‍🏫 <b id="tName">جاري التحميل...</b></div>
+    <button onclick="logout()" style="background:var(--gold); color:var(--navy); border:none; padding:5px 12px; border-radius:6px; font-weight:bold;">خروج</button>
 </header>
 
 <div class="nav-tabs">
-    <button id="tabEntry" class="btn-active" onclick="showSection('entry')">📥 رصد الدرجات</button>
-    <button id="tabReport" class="btn-inactive" onclick="showSection('report')">📊 مركز التقارير</button>
+    <button id="tabEntry" class="btn-active" onclick="showSection('entry')">📥 الرصد الميداني</button>
+    <button id="tabReport" class="btn-inactive" onclick="showSection('report')">📊 تقرير تفصيلي</button>
 </div>
 
 <div class="container">
@@ -84,38 +67,32 @@
     </div>
 
     <div id="entrySection">
-        <select id="vWeek" onchange="loadStudentsData()"><option value="">اختر الفترة المفتوحة...</option></select>
+        <select id="vWeek" onchange="loadStudentsData()"><option value="">اختر الأسبوع الحالي للرصد...</option></select>
         <div id="studentList"></div>
     </div>
 
     <div id="reportSection" style="display:none;">
         <div class="card">
-            <h3 style="margin:0 0 15px 0; color:var(--navy);">🛠️ إعداد التقرير</h3>
-            <div class="report-settings">
-                <div>
-                    <label style="font-size:12px; font-weight:bold;">الطلاب في الصفحة:</label>
-                    <input type="number" id="pageSize" class="num-input" value="20">
-                </div>
-                <div>
-                    <label style="font-size:12px; font-weight:bold;">خيارات إضافية:</label>
-                    <div style="font-size:11px; margin-top:10px;">
-                        <label><input type="checkbox" id="incAbs" checked> غياب</label>
-                        <label><input type="checkbox" id="incEx" checked> اختبار</label>
-                    </div>
+            <h4 style="margin-top:0;">⚙️ إعداد كشف الدرجات التفصيلي</h4>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                <input type="number" id="pageSize" class="num-input" placeholder="طلاب/صفحة" value="20">
+                <div style="font-size:12px;">
+                    <label><input type="checkbox" id="incAbs" checked> غياب</label>
+                    <label><input type="checkbox" id="incEx" checked> اختبار</label>
                 </div>
             </div>
-            <label style="font-size:12px; font-weight:bold;">الأسابيع المطلوب تضمينها:</label>
+            <p style="font-size:12px; font-weight:bold; margin-bottom:5px;">حدد الأسابيع لعرض (ت، و، س):</p>
             <div id="weeksChecklist" class="weeks-grid"></div>
-            <button onclick="generateTeacherReport()" style="width:100%; padding:15px; background:var(--gold); border:none; border-radius:10px; font-weight:800; cursor:pointer;">توليد ومعاينة التقرير 👁️</button>
+            <button onclick="generateTeacherReport()" style="width:100%; padding:12px; background:var(--gold); border:none; border-radius:8px; font-weight:bold; cursor:pointer;">توليد التقرير الشامل 👁️</button>
         </div>
 
         <div id="exportTools" style="display:none;" class="card">
-            <div class="export-btns">
-                <button class="btn-exp" style="background:#10b981;" onclick="exportReport('excel')">Excel 📗</button>
-                <button class="btn-exp" style="background:#ef4444;" onclick="exportReport('pdf')">PDF 📕</button>
-                <button class="btn-exp" style="background:#3b82f6;" onclick="exportReport('png')">PNG 🖼️</button>
+            <div style="display:flex; gap:5px; margin-bottom:15px;">
+                <button onclick="exportReport('excel')" style="flex:1; background:#10b981; color:white; border:none; padding:10px; border-radius:5px;">إكسيل</button>
+                <button onclick="exportReport('pdf')" style="flex:1; background:#ef4444; color:white; border:none; padding:10px; border-radius:5px;">PDF</button>
+                <button onclick="exportReport('png')" style="flex:1; background:#3b82f6; color:white; border:none; padding:10px; border-radius:5px;">صورة</button>
             </div>
-            <div id="reportPreview" style="overflow-x:auto; margin-top:15px; border:1px solid #ddd; padding:5px;"></div>
+            <div id="reportPreview" style="overflow-x:auto;"></div>
         </div>
     </div>
 </div>
@@ -123,7 +100,6 @@
 <div class="smart-keyboard" id="numPad"></div>
 
 <script>
-    // --- Configuration & Init ---
     const firebaseConfig = { apiKey: "AIzaSyBePGZiqMPmZQdg36jZ4Rkdtd7OISxmob8", projectId: "rasd-tools" };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
@@ -133,13 +109,9 @@
     const daysArr = ['السبت', 'الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس'];
 
     window.onload = async () => {
-        if(!tId || tId === "almas2021") { sessionStorage.clear(); window.location.href = "index.html"; return; }
-        
-        // Load System Config
+        if(!tId) { window.location.href = "index.html"; return; }
         const confDoc = await db.collection('system').doc('config').get();
         sysConfig = confDoc.exists ? confDoc.data() : {};
-
-        // Load Teacher Info
         const tDoc = await db.collection('teachers').doc(tId).get();
         if(tDoc.exists) {
             teacherInfo = tDoc.data();
@@ -147,13 +119,13 @@
             teacherInfo.subjects.forEach(s => document.getElementById('vSubject').innerHTML += `<option value="${s}">${s}</option>`);
             teacherInfo.classes.forEach((c, idx) => document.getElementById('vClass').innerHTML += `<option value="${idx}">${c}</option>`);
         }
-
-        // Fill Weeks
         const weekSel = document.getElementById('vWeek');
         if(sysConfig.openWeeks) sysConfig.openWeeks.forEach(w => weekSel.innerHTML += `<option value="${w}">أسبوع ${w.substring(1)}</option>`);
         if(sysConfig.openExams) sysConfig.openExams.forEach(ex => weekSel.innerHTML += `<option value="${ex}">اختبار شهر ${ex.substring(2)}</option>`);
-
-        renderWeeksGrid();
+        
+        let whtml = '';
+        for(let i=1; i<=14; i++) whtml += `<div class="week-item"><input type="checkbox" class="week-opt" value="w${i}"> أ${i}</div>`;
+        document.getElementById('weeksChecklist').innerHTML = whtml;
     };
 
     function showSection(sec) {
@@ -163,33 +135,19 @@
         document.getElementById('tabReport').className = sec === 'report' ? 'btn-active' : 'btn-inactive';
     }
 
-    function renderWeeksGrid() {
-        let html = '';
-        for(let i=1; i<=14; i++) {
-            html += `<div class="week-item"><input type="checkbox" class="week-opt" value="w${i}"> أ${i}</div>`;
-        }
-        document.getElementById('weeksChecklist').innerHTML = html;
-    }
-
-    // --- Data Loading & Rendering (Entry) ---
     async function loadStudentsData() {
         const sub = document.getElementById('vSubject').value;
         const clsIdx = document.getElementById('vClass').value;
         const week = document.getElementById('vWeek').value;
         if(!sub || clsIdx === "") return;
-
-        const fullClassName = teacherInfo.classes[clsIdx]; 
-        const classCode = fullClassName.split(' - ')[1].trim(); 
-
+        const classCode = teacherInfo.classes[clsIdx].split(' - ')[1].trim(); 
         const sSnap = await db.collection('students').where('classCode', '==', classCode).get();
         currentStudents = sSnap.docs.map(doc => ({id: doc.id, ...doc.data()})).sort((a,b) => a.sortOrder - b.sortOrder);
 
         if(document.getElementById('entrySection').style.display !== 'none' && week) {
-            document.getElementById('studentList').innerHTML = '<p style="text-align:center">⏳ جاري جلب البيانات...</p>';
             const gSnap = await db.collection('grades').where('teacher','==',tId).where('week','==',week).where('subject','==',sub).get();
             const scs = {}; gSnap.forEach(d => { 
-                const dta = d.data(); 
-                if(!scs[dta.sid]) scs[dta.sid] = { scores: {}, attendance: [] };
+                const dta = d.data(); if(!scs[dta.sid]) scs[dta.sid] = { scores: {}, attendance: [] };
                 if(dta.type === 'attendance') scs[dta.sid].attendance = dta.days || [];
                 else scs[dta.sid].scores[dta.type] = dta.score; 
             });
@@ -200,26 +158,23 @@
     function renderList(data, week) {
         let html = '';
         currentStudents.forEach((s) => {
-            const studentData = data[s.id] || { scores: {}, attendance: [] };
-            const sc = studentData.scores;
-            const att = studentData.attendance;
+            const sd = data[s.id] || { scores: {}, attendance: [] };
             html += `<div class="card" id="row_${s.id}">
                 <div style="display:flex; justify-content:space-between; align-items:center;">
-                    <span style="font-size:13px; font-weight:600;">${s.sortOrder}. ${s.name}</span>
-                    <div style="display:flex; gap:5px;">`;
-            if(week.startsWith('ex')) {
-                html += drawInp(s.id, 'exam', sysConfig.maxExam, sc.exam, 'اختبار');
-            } else {
-                html += drawInp(s.id, 't', sysConfig.maxT, sc.t, 'ت');
-                html += drawInp(s.id, 'v', sysConfig.maxV, sc.v, 'و');
-                html += drawInp(s.id, 's', sysConfig.maxS, sc.s, 'س');
+                    <span style="font-size:12px; font-weight:bold;">${s.sortOrder}. ${s.name}</span>
+                    <div style="display:flex; gap:4px;">`;
+            if(week.startsWith('ex')) html += drawInp(s.id, 'exam', sysConfig.maxExam, sd.scores.exam, 'اختبار');
+            else {
+                html += drawInp(s.id, 't', sysConfig.maxT, sd.scores.t, 'ت');
+                html += drawInp(s.id, 'v', sysConfig.maxV, sd.scores.v, 'و');
+                html += drawInp(s.id, 's', sysConfig.maxS, sd.scores.s, 'س');
             }
             html += `</div></div>`;
             if(!week.startsWith('ex')) {
                 html += `<div class="absence-zone">`;
                 daysArr.forEach(day => {
-                    const isAbsent = att.includes(day);
-                    html += `<div class="day-chip ${isAbsent?'absent':''}" onclick="toggleAbsence('${s.id}', '${day}', this)">${day}</div>`;
+                    const isAbs = (sd.attendance || []).includes(day);
+                    html += `<div class="day-chip ${isAbs?'absent':''}" onclick="toggleAbsence('${s.id}', '${day}', this)">${day}</div>`;
                 });
                 html += `</div>`;
             }
@@ -229,11 +184,10 @@
     }
 
     function drawInp(sid, type, max, cur, lbl) {
-        return `<div style="text-align:center"><small style="font-size:8px; display:block; color:#64748b">${lbl}</small>
+        return `<div style="text-align:center"><small style="font-size:8px; display:block;">${lbl}</small>
         <input type="text" readonly class="score-sel ${cur!==undefined?'saved':''}" id="inp_${sid}_${type}" value="${cur!==undefined?cur:''}" onclick="openPad('${sid}','${type}',${max})"></div>`;
     }
 
-    // --- Keyboard & Saving Logic ---
     function openPad(sid, type, max) {
         activeInput = {sid, type, max};
         document.querySelectorAll('.card').forEach(c => c.classList.remove('active-row'));
@@ -243,10 +197,9 @@
         let keys = '';
         for(let i=1; i<=max; i++) keys += `<div class="key-btn" onclick="inputValue(${i})">${i}</div>`;
         keys += `<div class="key-btn" style="background:#f1f5f9" onclick="inputValue(0)">0</div>
-                 <div class="key-btn" style="background:var(--gold); color:var(--navy); font-size:12px" onclick="fillAllColumn()">الكل</div>
+                 <div class="key-btn" style="background:var(--gold); font-size:12px" onclick="fillAllColumn()">الكل</div>
                  <button onclick="closePad()" style="grid-column:span 2; background:var(--navy); color:var(--gold); border:none; border-radius:8px; font-weight:bold;">تم</button>`;
         pad.innerHTML = keys;
-        window.scrollTo({ top: document.getElementById(`row_${sid}`).offsetTop - 80, behavior: 'smooth' });
     }
 
     function inputValue(val) {
@@ -269,29 +222,12 @@
     async function toggleAbsence(sid, day, el) {
         el.classList.toggle('absent');
         const card = document.getElementById(`row_${sid}`);
-        const absentDays = Array.from(card.querySelectorAll('.day-chip.absent')).map(d => d.innerText);
+        const absDays = Array.from(card.querySelectorAll('.day-chip.absent')).map(d => d.innerText);
         const sub = document.getElementById('vSubject').value;
         const week = document.getElementById('vWeek').value;
         await db.collection('grades').doc(`${sid}_${week}_attendance_${sub}`).set({
-            sid, week, type: 'attendance', subject: sub, days: absentDays, teacher: tId, timestamp: Date.now()
+            sid, week, type: 'attendance', subject: sub, days: absDays, teacher: tId, timestamp: Date.now()
         }, {merge:true});
-        applyPenaltyLogic(sid, absentDays);
-    }
-
-    function applyPenaltyLogic(sid, absentDays) {
-        const penaltyDays = absentDays.filter(d => d !== 'السبت').length;
-        const penaltyAmount = penaltyDays * 2;
-        const sInput = document.getElementById(`inp_${sid}_s`);
-        if(absentDays.length >= 6) {
-            ['s','t','v'].forEach(tp => {
-                const inp = document.getElementById(`inp_${sid}_${tp}`);
-                if(inp) { inp.value = 0; saveToFirebase(sid, tp, 0); }
-            });
-        } else if(sInput) {
-            let currentS = parseInt(sysConfig.maxS || 10);
-            let newS = Math.max(0, currentS - penaltyAmount);
-            sInput.value = newS; sInput.classList.add('saved'); saveToFirebase(sid, 's', newS);
-        }
     }
 
     function autoNext() {
@@ -317,121 +253,99 @@
         });
     }
 
-    // --- Report Generation Logic ---
+    // --- مركز التقارير المتطور ---
     async function generateTeacherReport() {
         const sub = document.getElementById('vSubject').value;
         const clsIdx = document.getElementById('vClass').value;
-        if(!sub || clsIdx === "") return alert("يرجى اختيار المادة والفصل أولاً");
+        if(!sub || clsIdx === "") return alert("اختر المادة والفصل");
 
-        const selectedWeeks = Array.from(document.querySelectorAll('.week-opt:checked')).map(c => c.value);
-        if(selectedWeeks.length === 0) return alert("يرجى اختيار أسبوع واحد على الأقل");
+        const selWeeks = Array.from(document.querySelectorAll('.week-opt:checked')).map(c => c.value);
+        if(selWeeks.length === 0) return alert("اختر أسبوعاً واحداً على الأقل");
 
         const pageSize = parseInt(document.getElementById('pageSize').value) || 20;
         const incAbs = document.getElementById('incAbs').checked;
         const incEx = document.getElementById('incEx').checked;
 
-        // Fetch All Grades for this Teacher and Subject
         const gSnap = await db.collection('grades').where('teacher','==',tId).where('subject','==',sub).get();
         const allGrades = gSnap.docs.map(d => d.data());
 
-        let html = `<div id="printableArea" dir="rtl" style="background:white; padding:20px;">`;
+        let html = `<div id="printableArea" dir="rtl" style="background:white; padding:15px;">`;
         
-        // Chunk students for pagination
         for (let i = 0; i < currentStudents.length; i += pageSize) {
             const chunk = currentStudents.slice(i, i + pageSize);
             html += `
-                <div style="page-break-after:always; margin-bottom:40px;">
-                    <div style="text-align:center; margin-bottom:10px; border:2px solid var(--navy); padding:10px; border-radius:10px;">
-                        <h2 style="margin:0; color:var(--navy);">تقرير الأداء الأكاديمي</h2>
-                        <p style="margin:5px 0;"><b>المعلم:</b> ${teacherInfo.name} | <b>المادة:</b> ${sub} | <b>الفصل:</b> ${teacherInfo.classes[clsIdx]}</p>
-                    </div>
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>م</th>
-                                <th>اسم الطالب</th>
-                                ${selectedWeeks.map(w => `<th>${w.replace('w','أ')}</th>`).join('')}
-                                <th>متوسط ت</th>
-                                <th>متوسط و</th>
-                                <th>متوسط س</th>
-                                ${incAbs ? '<th>غياب</th>' : ''}
-                                ${incEx ? '<th>اختبار</th>' : ''}
-                            </tr>
-                        </thead>
-                        <tbody>`;
+            <div style="page-break-after:always; margin-bottom:30px;">
+                <div style="text-align:center; border:1px solid #000; padding:10px; margin-bottom:10px;">
+                    <h3 style="margin:0;">كشف درجات تفصيلي - مدرسة محمود عادل</h3>
+                    <p style="margin:5px 0;">المعلم: ${teacherInfo.name} | المادة: ${sub} | الفصل: ${teacherInfo.classes[clsIdx]}</p>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th rowspan="2" class="header-main">م</th>
+                            <th rowspan="2" class="header-main" style="min-width:120px;">اسم الطالب</th>
+                            ${selWeeks.map(w => `<th colspan="3" class="header-main">أسبوع ${w.replace('w','')}</th>`).join('')}
+                            <th colspan="3" class="header-main" style="background:#c5a059 !important; color:#000 !important;">المتوسطات العامة</th>
+                            ${incAbs ? `<th rowspan="2" class="header-main">غياب</th>` : ''}
+                            ${incEx ? `<th rowspan="2" class="header-main">اختبار</th>` : ''}
+                        </tr>
+                        <tr>
+                            ${selWeeks.map(() => `<th class="sub-head">ت</th><th class="sub-head">و</th><th class="sub-head">س</th>`).join('')}
+                            <th class="sub-head" style="background:#fef3c7 !important;">م.ت</th>
+                            <th class="sub-head" style="background:#fef3c7 !important;">م.و</th>
+                            <th class="sub-head" style="background:#fef3c7 !important;">م.س</th>
+                        </tr>
+                    </thead>
+                    <tbody>`;
 
             chunk.forEach(st => {
-                let sGrades = allGrades.filter(g => g.sid === st.id);
+                let sg = allGrades.filter(g => g.sid === st.id);
                 let sumT=0, sumV=0, sumS=0, count=0, totalAbs=0;
 
-                selectedWeeks.forEach(w => {
-                    let wt = sGrades.find(g => g.week === w && g.type === 't')?.score || 0;
-                    let wv = sGrades.find(g => g.week === w && g.type === 'v')?.score || 0;
-                    let ws = sGrades.find(g => g.week === w && g.type === 's')?.score || 0;
-                    if(wt > 0 || wv > 0) { sumT += wt; sumV += wv; sumS += ws; count++; }
+                let rowHtml = `<tr><td>${st.sortOrder}</td><td style="text-align:right;">${st.name}</td>`;
+                
+                selWeeks.forEach(w => {
+                    let wt = sg.find(g => g.week === w && g.type === 't')?.score || 0;
+                    let wv = sg.find(g => g.week === w && g.type === 'v')?.score || 0;
+                    let ws = sg.find(g => g.week === w && g.type === 's')?.score || 0;
+                    rowHtml += `<td>${wt||'-'}</td><td>${wv||'-'}</td><td>${ws||'-'}</td>`;
                     
+                    if(wt>0 || wv>0) { sumT+=wt; sumV+=wv; sumS+=ws; count++; }
                     if(incAbs) {
-                        let att = sGrades.find(g => g.week === w && g.type === 'attendance')?.days || [];
+                        let att = sg.find(g => g.week === w && g.type === 'attendance')?.days || [];
                         totalAbs += att.length;
                     }
                 });
 
-                let avgT = count > 0 ? (sumT / count).toFixed(1) : 0;
-                let avgV = count > 0 ? (sumV / count).toFixed(1) : 0;
-                let avgS = count > 0 ? (sumS / count).toFixed(1) : 0;
-                let exVal = incEx ? (sGrades.find(g => g.week === 'ex1')?.score || 0) + (sGrades.find(g => g.week === 'ex2')?.score || 0) : 0;
+                let aT = count>0 ? (sumT/count).toFixed(1) : 0;
+                let aV = count>0 ? (sumV/count).toFixed(1) : 0;
+                let aS = count>0 ? (sumS/count).toFixed(1) : 0;
+                let exV = incEx ? (sg.find(g => g.week === 'ex1')?.score || 0) + (sg.find(g => g.week === 'ex2')?.score || 0) : 0;
 
-                html += `
-                    <tr>
-                        <td>${st.sortOrder}</td>
-                        <td style="text-align:right;">${st.name}</td>
-                        ${selectedWeeks.map(w => {
-                            let val = sGrades.find(g => g.week === w && g.type === 't')?.score || '-';
-                            return `<td>${val}</td>`;
-                        }).join('')}
-                        <td style="font-weight:bold; background:#f0fdf4;">${avgT}</td>
-                        <td>${avgV}</td>
-                        <td>${avgS}</td>
-                        ${incAbs ? `<td style="color:var(--danger); font-weight:bold;">${totalAbs}</td>` : ''}
-                        ${incEx ? `<td style="background:#fff7ed; font-weight:bold;">${exVal}</td>` : ''}
-                    </tr>`;
+                rowHtml += `<td style="font-weight:bold; background:#f0f9ff;">${aT}</td>
+                            <td style="background:#f0f9ff;">${aV}</td>
+                            <td style="background:#f0f9ff;">${aS}</td>
+                            ${incAbs ? `<td style="color:red; font-weight:bold;">${totalAbs}</td>` : ''}
+                            ${incEx ? `<td style="font-weight:bold;">${exV}</td>` : ''}</tr>`;
+                html += rowHtml;
             });
 
-            html += `</tbody></table>
-                <div style="display:flex; justify-content:space-between; margin-top:10px; font-size:10px; color:#666;">
-                    <span>تاريخ الإصدار: ${new Date().toLocaleString('ar-EG')}</span>
-                    <span>صفحة رقم: ${(i/pageSize)+1}</span>
-                </div>
-            </div>`;
+            html += `</tbody></table></div>`;
         }
         html += `</div>`;
-
         document.getElementById('reportPreview').innerHTML = html;
         document.getElementById('exportTools').style.display = 'block';
-        window.scrollTo({ top: document.getElementById('exportTools').offsetTop, behavior: 'smooth' });
     }
 
-    function exportReport(format) {
-        const element = document.getElementById('printableArea');
-        const fileName = `تقرير_${teacherInfo.name}_${document.getElementById('vSubject').value}`;
-        
-        if(format === 'pdf') {
-            const opt = { margin: 10, filename: fileName+'.pdf', image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2 }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } };
-            html2pdf().set(opt).from(element).save();
-        } else if(format === 'png') {
-            html2canvas(element).then(canvas => {
-                let link = document.createElement('a');
-                link.download = fileName + '.png';
-                link.href = canvas.toDataURL();
-                link.click();
-            });
-        } else if(format === 'excel') {
-            let wb = XLSX.utils.table_to_book(element);
-            XLSX.writeFile(wb, fileName + '.xlsx');
-        }
+    function exportReport(fmt) {
+        const el = document.getElementById('printableArea');
+        const name = `كشف_${teacherInfo.name}_${document.getElementById('vSubject').value}`;
+        if(fmt==='pdf') html2pdf().from(el).set({margin:5, filename: name+'.pdf', html2canvas:{scale:2}}).save();
+        else if(fmt==='png') html2canvas(el).then(c => { let l=document.createElement('a'); l.download=name+'.png'; l.href=c.toDataURL(); l.click(); });
+        else if(fmt==='excel') XLSX.writeFile(XLSX.utils.table_to_book(el), name+'.xlsx');
     }
 
-    function logout() { if(confirm("هل تود تسجيل الخروج؟")) { sessionStorage.clear(); window.location.href="index.html"; } }
+    function logout() { sessionStorage.clear(); window.location.href="index.html"; }
 </script>
 </body>
 </html>
