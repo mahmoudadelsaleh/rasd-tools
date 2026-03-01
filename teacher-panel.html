@@ -26,26 +26,21 @@
         .btn-inactive { background: #e2e8f0; color: #64748b; }
 
         .container { padding: 12px; max-width: 95%; margin: auto; }
-        .card { background: white; border-radius: 12px; padding: 15px; margin-bottom: 10px; border: 1px solid #e2e8f0; box-shadow: 0 2px 5px rgba(0,0,0,0.05); transition: all 0.3s ease; }
+        .card { background: white; border-radius: 12px; padding: 15px; margin-bottom: 10px; border: 1px solid #e2e8f0; box-shadow: 0 2px 5px rgba(0,0,0,0.05); transition: all 0.2s; }
         
-        /* تمييز الصف النشط */
-        .active-row { border: 2px solid var(--blue) !important; background: #f0f7ff !important; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2); }
+        .active-row { border: 2px solid var(--blue) !important; background: #f0f7ff !important; }
 
-        /* Table Styles for Report */
         #reportPreview table { width: 100%; border-collapse: collapse; font-size: 11px; background: white; }
         #reportPreview th, #reportPreview td { border: 1px solid #cbd5e1; padding: 4px; text-align: center; }
         #reportPreview th { background: #f8fafc; color: var(--navy); }
         .header-main { background: var(--navy) !important; color: white !important; }
         .sub-head { background: #e2e8f0 !important; font-size: 9px; }
 
-        /* Keyboard & Input */
-        .smart-keyboard { position: fixed; bottom: 20px; left: 10px; right: 10px; background: #e2e8f0; padding: 10px; display: none; grid-template-columns: repeat(5, 1fr); gap: 6px; z-index: 2000; border-radius: 15px; border: 2px solid var(--gold); box-shadow: 0 -5px 20px rgba(0,0,0,0.2); }
+        .smart-keyboard { position: fixed; bottom: 20px; left: 10px; right: 10px; background: #e2e8f0; padding: 10px; display: none; grid-template-columns: repeat(5, 1fr); gap: 6px; z-index: 2000; border-radius: 15px; border: 2px solid var(--gold); }
         .key-btn { background: white; border-radius: 8px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; height: 45px; border: 1px solid #94a3b8; }
-        .score-sel { width: 40px; height: 35px; font-weight: bold; text-align: center; border-radius: 5px; border: 1px solid #cbd5e1; transition: all 0.2s; }
+        .score-sel { width: 40px; height: 35px; font-weight: bold; text-align: center; border-radius: 5px; border: 1px solid #cbd5e1; pointer-events: auto; }
         .score-sel.saved { background: #f0fdf4; border-color: var(--success); }
-        
-        /* تمييز خانة الرصد النشطة */
-        .active-input-highlight { border: 3px solid var(--gold) !important; background: #fffbeb !important; transform: scale(1.1); box-shadow: 0 0 8px rgba(197, 160, 89, 0.5); }
+        .active-input-highlight { border: 3px solid var(--gold) !important; background: #fffbeb !important; transform: scale(1.1); }
 
         select, .num-input { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #cbd5e1; margin-bottom: 8px; }
 
@@ -53,8 +48,7 @@
         .day-chip { font-size: 9px; padding: 3px 6px; border-radius: 4px; background: var(--success); color: white; cursor: pointer; }
         .day-chip.absent { background: var(--danger); }
         .weeks-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 5px; margin: 10px 0; }
-        
-        #studentList { padding-bottom: 200px; } /* مساحة إضافية لمنع اختفاء الطلاب خلف الكيبورد */
+        #studentList { padding-bottom: 250px; }
     </style>
 </head>
 <body>
@@ -142,7 +136,6 @@
         document.getElementById('reportSection').style.display = sec === 'report' ? 'block' : 'none';
         document.getElementById('tabEntry').className = sec === 'entry' ? 'btn-active' : 'btn-inactive';
         document.getElementById('tabReport').className = sec === 'report' ? 'btn-active' : 'btn-inactive';
-        if(sec === 'report') closePad();
     }
 
     async function loadStudentsData() {
@@ -200,8 +193,6 @@
 
     function openPad(sid, type, max) {
         activeInput = {sid, type, max};
-        
-        // 1. تمييز الصف والخانة
         document.querySelectorAll('.card').forEach(c => c.classList.remove('active-row'));
         const activeCard = document.getElementById(`row_${sid}`);
         activeCard.classList.add('active-row');
@@ -210,14 +201,11 @@
         const targetInput = document.getElementById(`inp_${sid}_${type}`);
         targetInput.classList.add('active-input-highlight');
 
-        // 2. التمرير الذكي (وضع الطالب في منتصف الشاشة فوق الكيبورد)
+        // تمرير سريع ومريح
         const offset = 160; 
         const elementPosition = activeCard.getBoundingClientRect().top + window.pageYOffset;
-        const offsetPosition = elementPosition - offset;
+        window.scrollTo({ top: elementPosition - offset, behavior: 'smooth' });
 
-        window.scrollTo({ top: offsetPosition, behavior: 'smooth' });
-
-        // 3. إظهار لوحة المفاتيح
         const pad = document.getElementById('numPad');
         pad.style.display = 'grid';
         let keys = '';
@@ -228,21 +216,24 @@
         pad.innerHTML = keys;
     }
 
-    async function inputValue(val) {
+    function inputValue(val) {
         if(!activeInput) return;
         const {sid, type} = activeInput;
         const inputEl = document.getElementById(`inp_${sid}_${type}`);
         inputEl.value = val;
         inputEl.classList.add('saved');
         
-        await saveToFirebase(sid, type, val);
+        // حفظ في الخلفية فوراً بدون await لتسريع الانتقال
+        saveToFirebase(sid, type, val);
+        
+        // انتقال لحظي
         autoNext();
     }
 
-    async function saveToFirebase(sid, type, score) {
+    function saveToFirebase(sid, type, score) {
         const sub = document.getElementById('vSubject').value;
         const week = document.getElementById('vWeek').value;
-        await db.collection('grades').doc(`${sid}_${week}_${type}_${sub}`).set({
+        db.collection('grades').doc(`${sid}_${week}_${type}_${sub}`).set({
             sid, week, type, subject: sub, score: parseInt(score), teacher: tId, timestamp: Date.now()
         }, {merge:true});
     }
@@ -253,7 +244,7 @@
         const absDays = Array.from(card.querySelectorAll('.day-chip.absent')).map(d => d.innerText);
         const sub = document.getElementById('vSubject').value;
         const week = document.getElementById('vWeek').value;
-        await db.collection('grades').doc(`${sid}_${week}_attendance_${sub}`).set({
+        db.collection('grades').doc(`${sid}_${week}_attendance_${sub}`).set({
             sid, week, type: 'attendance', subject: sub, days: absDays, teacher: tId, timestamp: Date.now()
         }, {merge:true});
     }
@@ -264,10 +255,8 @@
         let nIdx = types.indexOf(activeInput.type) + 1;
         
         if(nIdx < types.length) {
-            // رصد الخانة التالية لنفس الطالب
             openPad(activeInput.sid, types[nIdx], sysConfig[`max${types[nIdx].toUpperCase()}`]);
         } else {
-            // الانتقال للطالب التالي (يعمل في الرصد الإسبوعي والاختبارات الآن)
             const curI = currentStudents.findIndex(s => s.id === activeInput.sid);
             if(curI < currentStudents.length - 1) {
                 const nextSid = currentStudents[curI+1].id;
@@ -293,7 +282,6 @@
         });
     }
 
-    // --- مركز التقارير المتطور ---
     async function generateTeacherReport() {
         const sub = document.getElementById('vSubject').value;
         const clsIdx = document.getElementById('vClass').value;
@@ -340,21 +328,31 @@
 
             chunk.forEach(st => {
                 let sg = allGrades.filter(g => g.sid === st.id);
-                let sumT=0, sumV=0, sumS=0, count=0, totalAbs=0;
+                let sumT=0, sumV=0, sumS=0, count=0, totalAbsCount=0;
 
                 let rowHtml = `<tr><td>${st.sortOrder}</td><td style="text-align:right;">${st.name}</td>`;
 
                 selWeeks.forEach(w => {
+                    // جلب الغياب للأسبوع
+                    let att = sg.find(g => g.week === w && g.type === 'attendance')?.days || [];
+                    let isFullAbsence = (att.length >= 5); // غياب الأسبوع (بدون السبت)
+                    
                     let wt = sg.find(g => g.week === w && g.type === 't')?.score || 0;
                     let wv = sg.find(g => g.week === w && g.type === 'v')?.score || 0;
                     let ws = sg.find(g => g.week === w && g.type === 's')?.score || 0;
-                    rowHtml += `<td>${wt||'-'}</td><td>${wv||'-'}</td><td>${ws||'-'}</td>`;
 
-                    if(wt>0 || wv>0) { sumT+=wt; sumV+=wv; sumS+=ws; count++; }
-                    if(incAbs) {
-                        let att = sg.find(g => g.week === w && g.type === 'attendance')?.days || [];
-                        totalAbs += att.length;
+                    // تطبيق منطق الغياب الكامل: تصفير كل شيء
+                    if(isFullAbsence) { wt = 0; wv = 0; ws = 0; }
+                    else {
+                        // منطق خصم السلوك: خصم درجتين عن كل يوم (ماعدا السبت)
+                        let deductDays = att.filter(d => d !== 'السبت').length;
+                        ws = Math.max(0, ws - (deductDays * 2));
                     }
+
+                    rowHtml += `<td>${wt||'-'}</td><td>${wv||'-'}</td><td>${ws||'-'}</td>`;
+                    
+                    sumT+=wt; sumV+=wv; sumS+=ws; count++;
+                    totalAbsCount += att.length;
                 });
 
                 let aT = count>0 ? (sumT/count).toFixed(1) : 0;
@@ -365,7 +363,7 @@
                 rowHtml += `<td style="font-weight:bold; background:#f0f9ff;">${aT}</td>
                             <td style="background:#f0f9ff;">${aV}</td>
                             <td style="background:#f0f9ff;">${aS}</td>
-                            ${incAbs ? `<td style="color:red; font-weight:bold;">${totalAbs}</td>` : ''}
+                            ${incAbs ? `<td style="color:red; font-weight:bold;">${totalAbsCount}</td>` : ''}
                             ${incEx ? `<td style="font-weight:bold;">${exV}</td>` : ''}</tr>`;
                 html += rowHtml;
             });
