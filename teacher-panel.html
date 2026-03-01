@@ -37,8 +37,9 @@
 
         .smart-keyboard { position: fixed; bottom: 20px; left: 10px; right: 10px; background: #e2e8f0; padding: 10px; display: none; grid-template-columns: repeat(5, 1fr); gap: 6px; z-index: 2000; border-radius: 15px; border: 2px solid var(--gold); }
         .key-btn { background: white; border-radius: 8px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; height: 45px; border: 1px solid #94a3b8; }
-        .score-sel { width: 40px; height: 35px; font-weight: bold; text-align: center; border-radius: 5px; border: 1px solid #cbd5e1; }
+        .score-sel { width: 40px; height: 35px; font-weight: bold; text-align: center; border-radius: 5px; border: 1px solid #cbd5e1; transition: 0.2s; }
         .score-sel.saved { background: #f0fdf4; border-color: var(--success); }
+        .score-sel.deducted { background: #fef2f2 !important; border-color: var(--danger) !important; color: var(--danger); }
         .active-input-highlight { border: 3px solid var(--gold) !important; background: #fffbeb !important; transform: scale(1.1); }
 
         select, .num-input { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #cbd5e1; margin-bottom: 8px; }
@@ -109,6 +110,7 @@
     const tId = sessionStorage.getItem('userEmail');
     let currentStudents = [], activeInput = null, sysConfig = {}, teacherInfo = {};
     const daysArr = ['السبت', 'الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس'];
+    let originalScores = {}; // لتخزين الدرجات الأصلية قبل الخصم اللحظي
 
     window.onload = async () => {
         if(!tId) { window.location.href = "index.html"; return; }
@@ -159,17 +161,30 @@
 
     function renderList(data, week) {
         let html = '';
+        originalScores = {}; 
         currentStudents.forEach((s) => {
             const sd = data[s.id] || { scores: {}, attendance: [] };
+            originalScores[s.id] = { ...sd.scores };
+            
+            // تطبيق الخصم اللحظي للعرض فقط
+            let displayScores = { ...sd.scores };
+            let att = sd.attendance || [];
+            if(att.length >= 5) {
+                displayScores = { t:0, v:0, s:0 };
+            } else {
+                let deductDays = att.filter(d => d.trim() !== 'السبت').length;
+                if(displayScores.s !== undefined) displayScores.s = Math.max(0, displayScores.s - (deductDays * 2));
+            }
+
             html += `<div class="card" id="row_${s.id}">
                 <div style="display:flex; justify-content:space-between; align-items:center;">
                     <span style="font-size:12px; font-weight:bold;">${s.sortOrder}. ${s.name}</span>
                     <div style="display:flex; gap:4px;">`;
             if(week.startsWith('ex')) html += drawInp(s.id, 'exam', sysConfig.maxExam, sd.scores.exam, 'اختبار');
             else {
-                html += drawInp(s.id, 't', sysConfig.maxT, sd.scores.t, 'ت');
-                html += drawInp(s.id, 'v', sysConfig.maxV, sd.scores.v, 'و');
-                html += drawInp(s.id, 's', sysConfig.maxS, sd.scores.s, 'س');
+                html += drawInp(s.id, 't', sysConfig.maxT, displayScores.t, 'ت');
+                html += drawInp(s.id, 'v', sysConfig.maxV, displayScores.v, 'و');
+                html += drawInp(s.id, 's', sysConfig.maxS, displayScores.s, 'س');
             }
             html += `</div></div>`;
             if(!week.startsWith('ex')) {
@@ -186,8 +201,10 @@
     }
 
     function drawInp(sid, type, max, cur, lbl) {
+        let isDeducted = false;
+        if(originalScores[sid] && originalScores[sid][type] !== undefined && originalScores[sid][type] !== cur) isDeducted = true;
         return `<div style="text-align:center"><small style="font-size:8px; display:block;">${lbl}</small>
-        <input type="text" readonly class="score-sel ${cur!==undefined?'saved':''}" id="inp_${sid}_${type}" value="${cur!==undefined?cur:''}" onclick="openPad('${sid}','${type}',${max})"></div>`;
+        <input type="text" readonly class="score-sel ${cur!==undefined?'saved':''} ${isDeducted?'deducted':''}" id="inp_${sid}_${type}" value="${cur!==undefined?cur:''}" onclick="openPad('${sid}','${type}',${max})"></div>`;
     }
 
     function openPad(sid, type, max) {
@@ -216,10 +233,40 @@
     function inputValue(val) {
         if(!activeInput) return;
         const {sid, type} = activeInput;
-        document.getElementById(`inp_${sid}_${type}`).value = val;
-        document.getElementById(`inp_${sid}_${type}`).classList.add('saved');
+        // تحديث الدرجة الأصلية المخزنة محلياً
+        if(!originalScores[sid]) originalScores[sid] = {};
+        originalScores[sid][type] = parseInt(val);
+        
+        // تحديث العرض بالخصم اللحظي
+        refreshRowUI(sid);
+        
         saveToFirebase(sid, type, val);
         autoNext();
+    }
+
+    function refreshRowUI(sid) {
+        const card = document.getElementById(`row_${sid}`);
+        const absDays = Array.from(card.querySelectorAll('.day-chip.absent')).map(d => d.innerText.trim());
+        let scores = { ...originalScores[sid] };
+        
+        const week = document.getElementById('vWeek').value;
+        if(week.startsWith('ex')) return; // لا خصم في الاختبارات
+
+        if(absDays.length >= 5) {
+            if(scores.t !== undefined) document.getElementById(`inp_${sid}_t`).value = 0;
+            if(scores.v !== undefined) document.getElementById(`inp_${sid}_v`).value = 0;
+            if(scores.s !== undefined) document.getElementById(`inp_${sid}_s`).value = 0;
+        } else {
+            let deduct = absDays.filter(d => d !== 'السبت').length * 2;
+            if(scores.t !== undefined) document.getElementById(`inp_${sid}_t`).value = scores.t;
+            if(scores.v !== undefined) document.getElementById(`inp_${sid}_v`).value = scores.v;
+            if(scores.s !== undefined) {
+                let finalS = Math.max(0, scores.s - deduct);
+                document.getElementById(`inp_${sid}_s`).value = finalS;
+                if(deduct > 0) document.getElementById(`inp_${sid}_s`).classList.add('deducted');
+                else document.getElementById(`inp_${sid}_s`).classList.remove('deducted');
+            }
+        }
     }
 
     function saveToFirebase(sid, type, score) {
@@ -232,6 +279,8 @@
 
     function toggleAbsence(sid, day, el) {
         el.classList.toggle('absent');
+        refreshRowUI(sid); // تحديث الخصم فوراً عند الضغط على الغياب
+        
         const card = document.getElementById(`row_${sid}`);
         const absDays = Array.from(card.querySelectorAll('.day-chip.absent')).map(d => d.innerText.trim());
         const sub = document.getElementById('vSubject').value;
@@ -261,8 +310,10 @@
         const val = document.getElementById(`inp_${activeInput.sid}_${activeInput.type}`).value;
         if(val === "") return;
         currentStudents.forEach(s => {
-            const t = document.getElementById(`inp_${s.id}_${activeInput.type}`);
-            if(t) { t.value = val; t.classList.add('saved'); saveToFirebase(s.id, activeInput.type, val); }
+            if(!originalScores[s.id]) originalScores[s.id] = {};
+            originalScores[s.id][activeInput.type] = parseInt(val);
+            refreshRowUI(s.id);
+            saveToFirebase(s.id, activeInput.type, val);
         });
     }
 
@@ -286,7 +337,7 @@
             const chunk = currentStudents.slice(i, i + pageSize);
             html += `
             <div style="page-break-after:always; margin-bottom:30px;">
-                <div style="text-align:center; border:2px solid #000; padding:10px; margin-bottom:10px;">
+                <div style="text-align:center; border:1px solid #000; padding:10px; margin-bottom:10px;">
                     <h3 style="margin:0;">كشف درجات تفصيلي - مدرسة محمود عادل</h3>
                     <p style="margin:5px 0;">المعلم: ${teacherInfo.name} | المادة: ${sub} | الفصل: ${teacherInfo.classes[clsIdx]}</p>
                 </div>
@@ -320,13 +371,10 @@
                     let wv = sg.find(g => g.week === w && g.type === 'v')?.score || 0;
                     let ws = sg.find(g => g.week === w && g.type === 's')?.score || 0;
 
-                    // --- محرك الخصم الرئيسي ---
                     let attendanceList = attData.map(day => day.trim());
                     if(attendanceList.length >= 5) { 
-                        // غياب أسبوع كامل (الأيام الدراسية) -> تصفير الدرجات
                         wt = 0; wv = 0; ws = 0;
                     } else {
-                        // خصم درجتين عن كل يوم غياب ما عدا السبت
                         let deductDays = attendanceList.filter(d => d !== 'السبت' && d !== '').length;
                         ws = Math.max(0, ws - (deductDays * 2));
                     }
