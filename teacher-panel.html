@@ -37,7 +37,7 @@
 
         .smart-keyboard { position: fixed; bottom: 20px; left: 10px; right: 10px; background: #e2e8f0; padding: 10px; display: none; grid-template-columns: repeat(5, 1fr); gap: 6px; z-index: 2000; border-radius: 15px; border: 2px solid var(--gold); }
         .key-btn { background: white; border-radius: 8px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; height: 45px; border: 1px solid #94a3b8; }
-        .score-sel { width: 40px; height: 35px; font-weight: bold; text-align: center; border-radius: 5px; border: 1px solid #cbd5e1; transition: 0.2s; }
+        .score-sel { width: 40px; height: 35px; font-weight: bold; text-align: center; border-radius: 5px; border: 1px solid #cbd5e1; transition: 0.1s; }
         .score-sel.saved { background: #f0fdf4; border-color: var(--success); }
         .score-sel.deducted { background: #fef2f2 !important; border-color: var(--danger) !important; color: var(--danger); }
         .active-input-highlight { border: 3px solid var(--gold) !important; background: #fffbeb !important; transform: scale(1.1); }
@@ -110,7 +110,7 @@
     const tId = sessionStorage.getItem('userEmail');
     let currentStudents = [], activeInput = null, sysConfig = {}, teacherInfo = {};
     const daysArr = ['السبت', 'الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس'];
-    let originalScores = {}; // لتخزين الدرجات الأصلية قبل الخصم اللحظي
+    let originalScores = {}; 
 
     window.onload = async () => {
         if(!tId) { window.location.href = "index.html"; return; }
@@ -166,21 +166,21 @@
             const sd = data[s.id] || { scores: {}, attendance: [] };
             originalScores[s.id] = { ...sd.scores };
             
-            // تطبيق الخصم اللحظي للعرض فقط
             let displayScores = { ...sd.scores };
-            let att = sd.attendance || [];
-            if(att.length >= 5) {
-                displayScores = { t:0, v:0, s:0 };
-            } else {
-                let deductDays = att.filter(d => d.trim() !== 'السبت').length;
-                if(displayScores.s !== undefined) displayScores.s = Math.max(0, displayScores.s - (deductDays * 2));
+            if(!week.startsWith('ex')) {
+                let att = sd.attendance || [];
+                if(att.length >= 5) { displayScores = { t:0, v:0, s:0 }; }
+                else {
+                    let deductDays = att.filter(d => d.trim() !== 'السبت').length;
+                    if(displayScores.s !== undefined) displayScores.s = Math.max(0, displayScores.s - (deductDays * 2));
+                }
             }
 
             html += `<div class="card" id="row_${s.id}">
                 <div style="display:flex; justify-content:space-between; align-items:center;">
                     <span style="font-size:12px; font-weight:bold;">${s.sortOrder}. ${s.name}</span>
                     <div style="display:flex; gap:4px;">`;
-            if(week.startsWith('ex')) html += drawInp(s.id, 'exam', sysConfig.maxExam, sd.scores.exam, 'اختبار');
+            if(week.startsWith('ex')) html += drawInp(s.id, 'exam', sysConfig.maxExam, displayScores.exam, 'اختبار');
             else {
                 html += drawInp(s.id, 't', sysConfig.maxT, displayScores.t, 'ت');
                 html += drawInp(s.id, 'v', sysConfig.maxV, displayScores.v, 'و');
@@ -233,39 +233,44 @@
     function inputValue(val) {
         if(!activeInput) return;
         const {sid, type} = activeInput;
-        // تحديث الدرجة الأصلية المخزنة محلياً
         if(!originalScores[sid]) originalScores[sid] = {};
         originalScores[sid][type] = parseInt(val);
         
-        // تحديث العرض بالخصم اللحظي
         refreshRowUI(sid);
-        
         saveToFirebase(sid, type, val);
         autoNext();
     }
 
     function refreshRowUI(sid) {
-        const card = document.getElementById(`row_${sid}`);
-        const absDays = Array.from(card.querySelectorAll('.day-chip.absent')).map(d => d.innerText.trim());
-        let scores = { ...originalScores[sid] };
-        
         const week = document.getElementById('vWeek').value;
-        if(week.startsWith('ex')) return; // لا خصم في الاختبارات
+        const card = document.getElementById(`row_${sid}`);
+        let scores = { ...originalScores[sid] };
 
+        // إصلاح الرصد اللحظي للاختبارات
+        if(week.startsWith('ex')) {
+            const inp = document.getElementById(`inp_${sid}_exam`);
+            if(inp) {
+                inp.value = scores.exam !== undefined ? scores.exam : '';
+                inp.classList.add('saved');
+            }
+            return;
+        }
+
+        // الرصد الأسبوعي العادي مع الخصم
+        const absDays = Array.from(card.querySelectorAll('.day-chip.absent')).map(d => d.innerText.trim());
         if(absDays.length >= 5) {
-            if(scores.t !== undefined) document.getElementById(`inp_${sid}_t`).value = 0;
-            if(scores.v !== undefined) document.getElementById(`inp_${sid}_v`).value = 0;
-            if(scores.s !== undefined) document.getElementById(`inp_${sid}_s`).value = 0;
+            ['t','v','s'].forEach(t => { const el = document.getElementById(`inp_${sid}_${t}`); if(el) el.value = 0; });
         } else {
             let deduct = absDays.filter(d => d !== 'السبت').length * 2;
-            if(scores.t !== undefined) document.getElementById(`inp_${sid}_t`).value = scores.t;
-            if(scores.v !== undefined) document.getElementById(`inp_${sid}_v`).value = scores.v;
-            if(scores.s !== undefined) {
-                let finalS = Math.max(0, scores.s - deduct);
-                document.getElementById(`inp_${sid}_s`).value = finalS;
-                if(deduct > 0) document.getElementById(`inp_${sid}_s`).classList.add('deducted');
-                else document.getElementById(`inp_${sid}_s`).classList.remove('deducted');
-            }
+            ['t','v','s'].forEach(t => {
+                const el = document.getElementById(`inp_${sid}_${t}`);
+                if(el && scores[t] !== undefined) {
+                    let finalVal = (t === 's') ? Math.max(0, scores[t] - deduct) : scores[t];
+                    el.value = finalVal;
+                    if(t === 's' && deduct > 0) el.classList.add('deducted'); else el.classList.remove('deducted');
+                    el.classList.add('saved');
+                }
+            });
         }
     }
 
@@ -279,8 +284,7 @@
 
     function toggleAbsence(sid, day, el) {
         el.classList.toggle('absent');
-        refreshRowUI(sid); // تحديث الخصم فوراً عند الضغط على الغياب
-        
+        refreshRowUI(sid);
         const card = document.getElementById(`row_${sid}`);
         const absDays = Array.from(card.querySelectorAll('.day-chip.absent')).map(d => d.innerText.trim());
         const sub = document.getElementById('vSubject').value;
