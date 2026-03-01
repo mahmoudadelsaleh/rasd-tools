@@ -29,11 +29,11 @@
         .card { background: white; border-radius: 12px; padding: 15px; margin-bottom: 10px; border: 1px solid #e2e8f0; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
         .active-row { border: 2px solid var(--blue) !important; background: #f0f7ff !important; }
 
-        #reportPreview table { width: 100%; border-collapse: collapse; font-size: 11px; background: white; }
-        #reportPreview th, #reportPreview td { border: 1px solid #cbd5e1; padding: 4px; text-align: center; }
+        #reportPreview table { width: 100%; border-collapse: collapse; font-size: 11px; background: white; border: 1px solid #000; }
+        #reportPreview th, #reportPreview td { border: 1px solid #000; padding: 4px; text-align: center; }
         #reportPreview th { background: #f8fafc; color: var(--navy); }
         .header-main { background: var(--navy) !important; color: white !important; }
-        .sub-head { background: #e2e8f0 !important; font-size: 9px; }
+        .sub-head { background: #e2e8f0 !important; font-size: 9px; font-weight: bold; }
 
         .smart-keyboard { position: fixed; bottom: 20px; left: 10px; right: 10px; background: #e2e8f0; padding: 10px; display: none; grid-template-columns: repeat(5, 1fr); gap: 6px; z-index: 2000; border-radius: 15px; border: 2px solid var(--gold); }
         .key-btn { background: white; border-radius: 8px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; height: 45px; border: 1px solid #94a3b8; }
@@ -233,7 +233,7 @@
     function toggleAbsence(sid, day, el) {
         el.classList.toggle('absent');
         const card = document.getElementById(`row_${sid}`);
-        const absDays = Array.from(card.querySelectorAll('.day-chip.absent')).map(d => d.innerText);
+        const absDays = Array.from(card.querySelectorAll('.day-chip.absent')).map(d => d.innerText.trim());
         const sub = document.getElementById('vSubject').value;
         const week = document.getElementById('vWeek').value;
         db.collection('grades').doc(`${sid}_${week}_attendance_${sub}`).set({
@@ -245,11 +245,13 @@
         const week = document.getElementById('vWeek').value;
         const types = week.startsWith('ex') ? ['exam'] : ['t','v','s'];
         let nIdx = types.indexOf(activeInput.type) + 1;
-        if(nIdx < types.length) openPad(activeInput.sid, types[nIdx], sysConfig[`max${types[nIdx].toUpperCase()}`]);
-        else {
+        if(nIdx < types.length) {
+            openPad(activeInput.sid, types[nIdx], sysConfig[`max${types[nIdx].toUpperCase()}`]);
+        } else {
             const curI = currentStudents.findIndex(s => s.id === activeInput.sid);
-            if(curI < currentStudents.length - 1) openPad(currentStudents[curI+1].id, types[0], week.startsWith('ex') ? sysConfig.maxExam : sysConfig.maxT);
-            else closePad();
+            if(curI < currentStudents.length - 1) {
+                openPad(currentStudents[curI+1].id, types[0], week.startsWith('ex') ? sysConfig.maxExam : sysConfig.maxT);
+            } else { closePad(); }
         }
     }
 
@@ -284,7 +286,7 @@
             const chunk = currentStudents.slice(i, i + pageSize);
             html += `
             <div style="page-break-after:always; margin-bottom:30px;">
-                <div style="text-align:center; border:1px solid #000; padding:10px; margin-bottom:10px;">
+                <div style="text-align:center; border:2px solid #000; padding:10px; margin-bottom:10px;">
                     <h3 style="margin:0;">كشف درجات تفصيلي - مدرسة محمود عادل</h3>
                     <p style="margin:5px 0;">المعلم: ${teacherInfo.name} | المادة: ${sub} | الفصل: ${teacherInfo.classes[clsIdx]}</p>
                 </div>
@@ -313,23 +315,25 @@
                 let rowHtml = `<tr><td>${st.sortOrder}</td><td style="text-align:right;">${st.name}</td>`;
 
                 selWeeks.forEach(w => {
-                    let att = sg.find(g => g.week === w && g.type === 'attendance')?.days || [];
+                    let attData = sg.find(g => g.week === w && g.type === 'attendance')?.days || [];
                     let wt = sg.find(g => g.week === w && g.type === 't')?.score || 0;
                     let wv = sg.find(g => g.week === w && g.type === 'v')?.score || 0;
                     let ws = sg.find(g => g.week === w && g.type === 's')?.score || 0;
 
-                    // تطبيق منطق الخصم
-                    if(att.length >= 5) { // غياب الأسبوع (5 أيام دراسية فأكثر)
+                    // --- محرك الخصم الرئيسي ---
+                    let attendanceList = attData.map(day => day.trim());
+                    if(attendanceList.length >= 5) { 
+                        // غياب أسبوع كامل (الأيام الدراسية) -> تصفير الدرجات
                         wt = 0; wv = 0; ws = 0;
                     } else {
-                        // خصم السلوك: درجتين عن كل يوم ما عدا السبت
-                        let deductDays = att.filter(d => d !== 'السبت').length;
+                        // خصم درجتين عن كل يوم غياب ما عدا السبت
+                        let deductDays = attendanceList.filter(d => d !== 'السبت' && d !== '').length;
                         ws = Math.max(0, ws - (deductDays * 2));
                     }
 
                     rowHtml += `<td>${wt||'-'}</td><td>${wv||'-'}</td><td>${ws||'-'}</td>`;
                     sumT += wt; sumV += wv; sumS += ws; count++;
-                    totalAbsCount += att.length;
+                    totalAbsCount += attendanceList.length;
                 });
 
                 let aT = count>0 ? (sumT/count).toFixed(1) : 0;
@@ -354,7 +358,7 @@
     function exportReport(fmt) {
         const el = document.getElementById('printableArea');
         const name = `كشف_${teacherInfo.name}_${document.getElementById('vSubject').value}`;
-        if(fmt==='pdf') html2pdf().from(el).set({margin:5, filename: name+'.pdf', html2canvas:{scale:2}}).save();
+        if(fmt==='pdf') html2pdf().from(el).set({margin:5, filename: name+'.pdf', html2canvas:{scale:2}, jsPDF: { orientation: 'landscape' }}).save();
         else if(fmt==='png') html2canvas(el).then(c => { let l=document.createElement('a'); l.download=name+'.png'; l.href=c.toDataURL(); l.click(); });
         else if(fmt==='excel') XLSX.writeFile(XLSX.utils.table_to_book(el), name+'.xlsx');
     }
