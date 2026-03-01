@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>لوحة المعلم الاحترافية | v2026</title>
-    
+
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -26,8 +26,11 @@
         .btn-inactive { background: #e2e8f0; color: #64748b; }
 
         .container { padding: 12px; max-width: 95%; margin: auto; }
-        .card { background: white; border-radius: 12px; padding: 15px; margin-bottom: 10px; border: 1px solid #e2e8f0; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .card { background: white; border-radius: 12px; padding: 15px; margin-bottom: 10px; border: 1px solid #e2e8f0; box-shadow: 0 2px 5px rgba(0,0,0,0.05); transition: all 0.3s ease; }
         
+        /* تمييز الصف النشط */
+        .active-row { border: 2px solid var(--blue) !important; background: #f0f7ff !important; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2); }
+
         /* Table Styles for Report */
         #reportPreview table { width: 100%; border-collapse: collapse; font-size: 11px; background: white; }
         #reportPreview th, #reportPreview td { border: 1px solid #cbd5e1; padding: 4px; text-align: center; }
@@ -36,16 +39,22 @@
         .sub-head { background: #e2e8f0 !important; font-size: 9px; }
 
         /* Keyboard & Input */
-        .smart-keyboard { position: fixed; bottom: 20px; left: 10px; right: 10px; background: #e2e8f0; padding: 10px; display: none; grid-template-columns: repeat(5, 1fr); gap: 6px; z-index: 2000; border-radius: 15px; border: 2px solid var(--gold); }
+        .smart-keyboard { position: fixed; bottom: 20px; left: 10px; right: 10px; background: #e2e8f0; padding: 10px; display: none; grid-template-columns: repeat(5, 1fr); gap: 6px; z-index: 2000; border-radius: 15px; border: 2px solid var(--gold); box-shadow: 0 -5px 20px rgba(0,0,0,0.2); }
         .key-btn { background: white; border-radius: 8px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; height: 45px; border: 1px solid #94a3b8; }
-        .score-sel { width: 40px; height: 35px; font-weight: bold; text-align: center; border-radius: 5px; border: 1px solid #cbd5e1; }
+        .score-sel { width: 40px; height: 35px; font-weight: bold; text-align: center; border-radius: 5px; border: 1px solid #cbd5e1; transition: all 0.2s; }
         .score-sel.saved { background: #f0fdf4; border-color: var(--success); }
+        
+        /* تمييز خانة الرصد النشطة */
+        .active-input-highlight { border: 3px solid var(--gold) !important; background: #fffbeb !important; transform: scale(1.1); box-shadow: 0 0 8px rgba(197, 160, 89, 0.5); }
+
         select, .num-input { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #cbd5e1; margin-bottom: 8px; }
 
         .absence-zone { display: flex; gap: 3px; margin-top: 8px; justify-content: center; }
         .day-chip { font-size: 9px; padding: 3px 6px; border-radius: 4px; background: var(--success); color: white; cursor: pointer; }
         .day-chip.absent { background: var(--danger); }
         .weeks-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 5px; margin: 10px 0; }
+        
+        #studentList { padding-bottom: 200px; } /* مساحة إضافية لمنع اختفاء الطلاب خلف الكيبورد */
     </style>
 </head>
 <body>
@@ -111,7 +120,7 @@
     window.onload = async () => {
         if(!tId) { window.location.href = "index.html"; return; }
         const confDoc = await db.collection('system').doc('config').get();
-        sysConfig = confDoc.exists ? confDoc.data() : {};
+        sysConfig = confDoc.exists ? confDoc.data() : { maxT: 5, maxV: 5, maxS: 5, maxExam: 20 };
         const tDoc = await db.collection('teachers').doc(tId).get();
         if(tDoc.exists) {
             teacherInfo = tDoc.data();
@@ -122,7 +131,7 @@
         const weekSel = document.getElementById('vWeek');
         if(sysConfig.openWeeks) sysConfig.openWeeks.forEach(w => weekSel.innerHTML += `<option value="${w}">أسبوع ${w.substring(1)}</option>`);
         if(sysConfig.openExams) sysConfig.openExams.forEach(ex => weekSel.innerHTML += `<option value="${ex}">اختبار شهر ${ex.substring(2)}</option>`);
-        
+
         let whtml = '';
         for(let i=1; i<=14; i++) whtml += `<div class="week-item"><input type="checkbox" class="week-opt" value="w${i}"> أ${i}</div>`;
         document.getElementById('weeksChecklist').innerHTML = whtml;
@@ -133,6 +142,7 @@
         document.getElementById('reportSection').style.display = sec === 'report' ? 'block' : 'none';
         document.getElementById('tabEntry').className = sec === 'entry' ? 'btn-active' : 'btn-inactive';
         document.getElementById('tabReport').className = sec === 'report' ? 'btn-active' : 'btn-inactive';
+        if(sec === 'report') closePad();
     }
 
     async function loadStudentsData() {
@@ -190,8 +200,24 @@
 
     function openPad(sid, type, max) {
         activeInput = {sid, type, max};
+        
+        // 1. تمييز الصف والخانة
         document.querySelectorAll('.card').forEach(c => c.classList.remove('active-row'));
-        document.getElementById(`row_${sid}`).classList.add('active-row');
+        const activeCard = document.getElementById(`row_${sid}`);
+        activeCard.classList.add('active-row');
+
+        document.querySelectorAll('.score-sel').forEach(i => i.classList.remove('active-input-highlight'));
+        const targetInput = document.getElementById(`inp_${sid}_${type}`);
+        targetInput.classList.add('active-input-highlight');
+
+        // 2. التمرير الذكي (وضع الطالب في منتصف الشاشة فوق الكيبورد)
+        const offset = 160; 
+        const elementPosition = activeCard.getBoundingClientRect().top + window.pageYOffset;
+        const offsetPosition = elementPosition - offset;
+
+        window.scrollTo({ top: offsetPosition, behavior: 'smooth' });
+
+        // 3. إظهار لوحة المفاتيح
         const pad = document.getElementById('numPad');
         pad.style.display = 'grid';
         let keys = '';
@@ -202,12 +228,14 @@
         pad.innerHTML = keys;
     }
 
-    function inputValue(val) {
+    async function inputValue(val) {
         if(!activeInput) return;
         const {sid, type} = activeInput;
-        document.getElementById(`inp_${sid}_${type}`).value = val;
-        document.getElementById(`inp_${sid}_${type}`).classList.add('saved');
-        saveToFirebase(sid, type, val);
+        const inputEl = document.getElementById(`inp_${sid}_${type}`);
+        inputEl.value = val;
+        inputEl.classList.add('saved');
+        
+        await saveToFirebase(sid, type, val);
         autoNext();
     }
 
@@ -234,15 +262,27 @@
         const week = document.getElementById('vWeek').value;
         const types = week.startsWith('ex') ? ['exam'] : ['t','v','s'];
         let nIdx = types.indexOf(activeInput.type) + 1;
-        if(nIdx < types.length) openPad(activeInput.sid, types[nIdx], sysConfig[`max${types[nIdx].toUpperCase()}`]);
-        else {
+        
+        if(nIdx < types.length) {
+            // رصد الخانة التالية لنفس الطالب
+            openPad(activeInput.sid, types[nIdx], sysConfig[`max${types[nIdx].toUpperCase()}`]);
+        } else {
+            // الانتقال للطالب التالي (يعمل في الرصد الإسبوعي والاختبارات الآن)
             const curI = currentStudents.findIndex(s => s.id === activeInput.sid);
-            if(curI < currentStudents.length - 1) openPad(currentStudents[curI+1].id, types[0], sysConfig[`max${types[0].toUpperCase()}`]);
-            else closePad();
+            if(curI < currentStudents.length - 1) {
+                const nextSid = currentStudents[curI+1].id;
+                openPad(nextSid, types[0], week.startsWith('ex') ? sysConfig.maxExam : sysConfig.maxT);
+            } else {
+                closePad();
+            }
         }
     }
 
-    function closePad() { document.getElementById('numPad').style.display = 'none'; }
+    function closePad() { 
+        document.getElementById('numPad').style.display = 'none';
+        document.querySelectorAll('.card').forEach(c => c.classList.remove('active-row'));
+        document.querySelectorAll('.score-sel').forEach(i => i.classList.remove('active-input-highlight'));
+    }
 
     function fillAllColumn() {
         const val = document.getElementById(`inp_${activeInput.sid}_${activeInput.type}`).value;
@@ -270,7 +310,7 @@
         const allGrades = gSnap.docs.map(d => d.data());
 
         let html = `<div id="printableArea" dir="rtl" style="background:white; padding:15px;">`;
-        
+
         for (let i = 0; i < currentStudents.length; i += pageSize) {
             const chunk = currentStudents.slice(i, i + pageSize);
             html += `
@@ -303,13 +343,13 @@
                 let sumT=0, sumV=0, sumS=0, count=0, totalAbs=0;
 
                 let rowHtml = `<tr><td>${st.sortOrder}</td><td style="text-align:right;">${st.name}</td>`;
-                
+
                 selWeeks.forEach(w => {
                     let wt = sg.find(g => g.week === w && g.type === 't')?.score || 0;
                     let wv = sg.find(g => g.week === w && g.type === 'v')?.score || 0;
                     let ws = sg.find(g => g.week === w && g.type === 's')?.score || 0;
                     rowHtml += `<td>${wt||'-'}</td><td>${wv||'-'}</td><td>${ws||'-'}</td>`;
-                    
+
                     if(wt>0 || wv>0) { sumT+=wt; sumV+=wv; sumS+=ws; count++; }
                     if(incAbs) {
                         let att = sg.find(g => g.week === w && g.type === 'attendance')?.days || [];
@@ -320,7 +360,7 @@
                 let aT = count>0 ? (sumT/count).toFixed(1) : 0;
                 let aV = count>0 ? (sumV/count).toFixed(1) : 0;
                 let aS = count>0 ? (sumS/count).toFixed(1) : 0;
-                let exV = incEx ? (sg.find(g => g.week === 'ex1')?.score || 0) + (sg.find(g => g.week === 'ex2')?.score || 0) : 0;
+                let exV = incEx ? sg.filter(g => g.week.startsWith('ex')).reduce((a,b) => a + (b.score || 0), 0) : 0;
 
                 rowHtml += `<td style="font-weight:bold; background:#f0f9ff;">${aT}</td>
                             <td style="background:#f0f9ff;">${aV}</td>
