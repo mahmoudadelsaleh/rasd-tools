@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>لوحة المعلم الاحترافية | مدرسة الخدمة الثانوية</title>
+
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+    <style>
+        :root { --navy: #0a192f; --gold: #c5a059; --bg: #f1f5f9; --success: #10b981; --danger: #ef4444; --blue: #3b82f6; --light-green: #90ee90; }
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--bg); margin: 0; padding-bottom: 300px; overscroll-behavior-y: contain; }
+
+        .academic-header {
+            background: var(--navy); color: white; padding: 15px; 
+            display: flex; justify-content: space-between; align-items: center;
+            position: sticky; top: 0; z-index: 1000; border-bottom: 3px solid var(--gold);
+        }
+        .nav-tabs { display: flex; gap: 5px; padding: 10px; background: white; position: sticky; top: 60px; z-index: 999; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .nav-tabs button { flex: 1; padding: 12px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
+        .btn-active { background: var(--navy) !important; color: white !important; }
+        .btn-inactive { background: #e2e8f0; color: #64748b; }
+
+        .container { padding: 12px; max-width: 95%; margin: auto; }
+        .card { background: white; border-radius: 12px; padding: 15px; margin-bottom: 10px; border: 1px solid #e2e8f0; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .active-row { border: 2px solid var(--blue) !important; background: #f0f7ff !important; }
+
+        .smart-keyboard { position: fixed; bottom: 20px; left: 10px; right: 10px; background: #e2e8f0; padding: 10px; display: none; grid-template-columns: repeat(5, 1fr); gap: 6px; z-index: 2000; border-radius: 15px; border: 2px solid var(--gold); }
+        .key-btn { background: white; border-radius: 8px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; height: 45px; border: 1px solid #94a3b8; }
+        .score-sel { width: 40px; height: 35px; font-weight: bold; text-align: center; border-radius: 5px; border: 1px solid #cbd5e1; transition: 0.1s; }
+        .score-sel.saved { background: #f0fdf4; border-color: var(--success); }
+        .score-sel.deducted { background: #fef2f2 !important; border-color: var(--danger) !important; color: var(--danger); }
+        .active-input-highlight { border: 3px solid var(--gold) !important; background: #fffbeb !important; transform: scale(1.1); }
+
+        select, .num-input { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #cbd5e1; margin-bottom: 8px; }
+        .sync-btn { background: var(--gold); color: var(--navy); border: none; padding: 5px 10px; border-radius: 5px; font-size: 11px; font-weight: bold; cursor: pointer; margin-top: 5px; }
+
+        .absence-zone { display: flex; gap: 3px; margin-top: 8px; justify-content: center; }
+        .day-chip { font-size: 9px; padding: 3px 6px; border-radius: 4px; background: var(--success); color: white; cursor: pointer; }
+        .day-chip.absent { background: var(--danger); }
+        .weeks-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 5px; margin: 10px 0; }
+        #studentList { padding-bottom: 250px; }
+
+        /* Report Styles */
+        .report-page { width: 287mm; min-height: 200mm; padding: 10mm; margin: 20px auto; background: white; display: flex; flex-direction: column; justify-content: center; align-items: center; page-break-after: always; box-shadow: 0 0 15px rgba(0,0,0,0.2); }
+        #reportPreview table { width: 100%; border-collapse: collapse; font-size: 11px; background: white; border: 1px solid #000; table-layout: fixed; }
+        #reportPreview th, #reportPreview td { border: 1px solid #000; padding: 5px 2px; text-align: center; }
+        .thick-border-right { border-right: 3px solid #000 !important; }
+        .thick-border-left { border-left: 3px solid #000 !important; }
+        .header-main { background: var(--navy) !important; color: white !important; font-weight: bold; }
+        .week-header-style { background: #808080 !important; color: var(--light-green) !important; font-weight: bold; }
+        .sub-head { background: #e2e8f0 !important; font-size: 9px; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<header class="academic-header">
+    <div>👨‍🏫 <b id="tName">جاري...</b></div>
+    <button onclick="logout()" style="background:var(--gold); color:var(--navy); border:none; padding:5px 12px; border-radius:6px; font-weight:bold;">خروج</button>
+</header>
+
+<div class="nav-tabs">
+    <button id="tabEntry" class="btn-active" onclick="showSection('entry')">📥 الرصد الميداني</button>
+    <button id="tabReport" class="btn-inactive" onclick="showSection('report')">📊 التقرير والطباعة</button>
+</div>
+
+<div class="container">
+    <div class="card">
+        <select id="vSubject" onchange="loadStudentsData()"><option value="">اختر المادة...</option></select>
+        <select id="vClass" onchange="loadStudentsData()"><option value="">اختر الفصل...</option></select>
+        <button class="sync-btn" onclick="syncStudentsData()">تحديث قائمة الأسماء 🔄</button>
+    </div>
+
+    <div id="entrySection">
+        <select id="vWeek" onchange="loadStudentsData()"><option value="">اختر الأسبوع الحالي للرصد...</option></select>
+        <div id="studentList"></div>
+    </div>
+
+    <div id="reportSection" style="display:none;">
+        <div class="card">
+            <h4 style="margin-top:0;">⚙️ إعدادات الطباعة</h4>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                <input type="number" id="pageSize" class="num-input" placeholder="طلاب/صفحة" value="20">
+                <div style="font-size:12px;">
+                    <label><input type="checkbox" id="incAbs" checked> غياب</label>
+                    <label><input type="checkbox" id="incEx" checked> اختبار</label>
+                </div>
+            </div>
+            <p style="font-size:12px; font-weight:bold; margin-bottom:5px;">الأسابيع للعرض:</p>
+            <div id="weeksChecklist" class="weeks-grid"></div>
+            <button onclick="generateTeacherReport()" style="width:100%; padding:12px; background:var(--gold); border:none; border-radius:8px; font-weight:bold; cursor:pointer;">توليد التقرير الشامل 👁️</button>
+        </div>
+
+        <div id="exportTools" style="display:none;" class="card">
+            <div style="display:flex; gap:5px; margin-bottom:15px;">
+                <button onclick="exportReport('excel')" style="flex:1; background:#10b981; color:white; border:none; padding:10px; border-radius:5px;">Excel</button>
+                <button onclick="exportReport('pdf')" style="flex:1; background:#ef4444; color:white; border:none; padding:10px; border-radius:5px;">PDF</button>
+                <button onclick="exportReport('png')" style="flex:1; background:#3b82f6; color:white; border:none; padding:10px; border-radius:5px;">صورة</button>
+            </div>
+            <div id="reportPreview" style="overflow-x:auto;"></div>
+        </div>
+    </div>
+</div>
+
+<div class="smart-keyboard" id="numPad"></div>
+
+<script>
+    const firebaseConfig = { apiKey: "AIzaSyBePGZiqMPmZQdg36jZ4Rkdtd7OISxmob8", projectId: "rasd-tools" };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    const tId = sessionStorage.getItem('userEmail');
+    let currentStudents = [], activeInput = null, sysConfig = {}, teacherInfo = {};
+    const daysArr = ['السبت', 'الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس'];
+    let originalScores = {}; 
+
+    window.onload = async () => {
+        if(!tId) { window.location.href = "index.html"; return; }
+        const confDoc = await db.collection('system').doc('config').get();
+        sysConfig = confDoc.exists ? confDoc.data() : { maxT:5, maxV:5, maxS:5, maxExam:20 };
+        const tDoc = await db.collection('teachers').doc(tId).get();
+        if(tDoc.exists) {
+            teacherInfo = tDoc.data();
+            document.getElementById('tName').innerText = teacherInfo.name;
+            teacherInfo.subjects.forEach(s => document.getElementById('vSubject').innerHTML += `<option value="${s}">${s}</option>`);
+            teacherInfo.classes.forEach((c, idx) => document.getElementById('vClass').innerHTML += `<option value="${idx}">${c}</option>`);
+        }
+        const weekSel = document.getElementById('vWeek');
+        if(sysConfig.openWeeks) sysConfig.openWeeks.forEach(w => weekSel.innerHTML += `<option value="${w}">أسبوع ${w.substring(1)}</option>`);
+        if(sysConfig.openExams) sysConfig.openExams.forEach(ex => weekSel.innerHTML += `<option value="${ex}">اختبار شهر ${ex.substring(2)}</option>`);
+
+        let whtml = '';
+        for(let i=1; i<=14; i++) whtml += `<div class="week-item"><input type="checkbox" class="week-opt" value="w${i}"> أ${i}</div>`;
+        document.getElementById('weeksChecklist').innerHTML = whtml;
+    };
+
+    function showSection(sec) {
+        document.getElementById('entrySection').style.display = sec === 'entry' ? 'block' : 'none';
+        document.getElementById('reportSection').style.display = sec === 'report' ? 'block' : 'none';
+        document.getElementById('tabEntry').className = sec === 'entry' ? 'btn-active' : 'btn-inactive';
+        document.getElementById('tabReport').className = sec === 'report' ? 'btn-active' : 'btn-inactive';
+    }
+
+    // زر التحديث اليدوي للأسماء
+    async function syncStudentsData() {
+        const clsIdx = document.getElementById('vClass').value;
+        if(clsIdx === "") return alert("اختر الفصل أولاً");
+        const classCode = teacherInfo.classes[clsIdx].split(' - ')[1].trim();
+        
+        const sSnap = await db.collection('students').where('classCode', '==', classCode).get();
+        const students = sSnap.docs.map(doc => ({id: doc.id, ...doc.data()})).sort((a,b) => a.sortOrder - b.sortOrder);
+        
+        // حفظ في الذاكرة المحلية
+        localStorage.setItem(`students_${classCode}`, JSON.stringify(students));
+        alert("✅ تم تحديث قائمة الأسماء وحفظها في ذاكرة الموبايل");
+        loadStudentsData();
+    }
+
+    async function loadStudentsData() {
+        const sub = document.getElementById('vSubject').value;
+        const clsIdx = document.getElementById('vClass').value;
+        const week = document.getElementById('vWeek').value;
+        if(!sub || clsIdx === "") return;
+        
+        const classCode = teacherInfo.classes[clsIdx].split(' - ')[1].trim(); 
+        
+        // محاولة الجلب من الذاكرة المحلية أولاً (0 قراءة Firebase)
+        const cachedStudents = localStorage.getItem(`students_${classCode}`);
+        if(cachedStudents) {
+            currentStudents = JSON.parse(cachedStudents);
+        } else {
+            // إذا لم توجد، جلبها مرة واحدة وحفظها
+            const sSnap = await db.collection('students').where('classCode', '==', classCode).get();
+            currentStudents = sSnap.docs.map(doc => ({id: doc.id, ...doc.data()})).sort((a,b) => a.sortOrder - b.sortOrder);
+            localStorage.setItem(`students_${classCode}`, JSON.stringify(currentStudents));
+        }
+
+        if(week) {
+            // الدرجات دائماً تجلب لضمان الدقة
+            const gSnap = await db.collection('grades').where('teacher','==',tId).where('week','==',week).where('subject','==',sub).get();
+            const scs = {}; gSnap.forEach(d => { 
+                const dta = d.data(); if(!scs[dta.sid]) scs[dta.sid] = { scores: {}, attendance: [] };
+                if(dta.type === 'attendance') scs[dta.sid].attendance = dta.days || [];
+                else scs[dta.sid].scores[dta.type] = dta.score; 
+            });
+            renderList(scs, week);
+        }
+    }
+
+    function renderList(data, week) {
+        let html = '';
+        originalScores = {}; 
+        currentStudents.forEach((s) => {
+            const sd = data[s.id] || { scores: {}, attendance: [] };
+            originalScores[s.id] = { ...sd.scores };
+            let displayScores = { ...sd.scores };
+            if(!week.startsWith('ex')) {
+                let att = sd.attendance || [];
+                if(att.length >= 5) { displayScores = { t:0, v:0, s:0 }; }
+                else {
+                    let dDays = att.filter(d => d.trim() !== 'السبت').length;
+                    if(displayScores.s !== undefined) displayScores.s = Math.max(0, displayScores.s - (dDays * 2));
+                }
+            }
+            html += `<div class="card" id="row_${s.id}">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <span style="font-size:12px; font-weight:bold;">${s.sortOrder}. ${s.name}</span>
+                    <div style="display:flex; gap:4px;">`;
+            if(week.startsWith('ex')) html += drawInp(s.id, 'exam', sysConfig.maxExam, displayScores.exam, 'اختبار');
+            else {
+                html += drawInp(s.id, 't', sysConfig.maxT, displayScores.t, 'ت');
+                html += drawInp(s.id, 'v', sysConfig.maxV, displayScores.v, 'و');
+                html += drawInp(s.id, 's', sysConfig.maxS, displayScores.s, 'س');
+            }
+            html += `</div></div>`;
+            if(!week.startsWith('ex')) {
+                html += `<div class="absence-zone">`;
+                daysArr.forEach(day => {
+                    const isAbs = (sd.attendance || []).includes(day);
+                    html += `<div class="day-chip ${isAbs?'absent':''}" onclick="toggleAbsence('${s.id}', '${day}', this)">${day}</div>`;
+                });
+                html += `</div>`;
+            }
+            html += `</div>`;
+        });
+        document.getElementById('studentList').innerHTML = html;
+    }
+
+    function drawInp(sid, type, max, cur, lbl) {
+        let isD = false; if(originalScores[sid] && originalScores[sid][type] !== undefined && originalScores[sid][type] !== cur) isD = true;
+        return `<div style="text-align:center"><small style="font-size:8px; display:block;">${lbl}</small>
+        <input type="text" readonly class="score-sel ${cur!==undefined?'saved':''} ${isD?'deducted':''}" id="inp_${sid}_${type}" value="${cur!==undefined?cur:''}" onclick="openPad('${sid}','${type}',${max})"></div>`;
+    }
+
+    function openPad(sid, type, max) {
+        activeInput = {sid, type, max};
+        document.querySelectorAll('.card').forEach(c => c.classList.remove('active-row'));
+        const activeCard = document.getElementById(`row_${sid}`);
+        activeCard.classList.add('active-row');
+        document.querySelectorAll('.score-sel').forEach(i => i.classList.remove('active-input-highlight'));
+        const targetInput = document.getElementById(`inp_${sid}_${type}`);
+        targetInput.classList.add('active-input-highlight');
+        const offset = 160; window.scrollTo({ top: (activeCard.getBoundingClientRect().top + window.pageYOffset) - offset, behavior: 'smooth' });
+        const pad = document.getElementById('numPad');
+        pad.style.display = 'grid';
+        let keys = '';
+        for(let i=1; i<=max; i++) keys += `<div class="key-btn" onclick="inputValue(${i})">${i}</div>`;
+        keys += `<div class="key-btn" style="background:#f1f5f9" onclick="inputValue(0)">0</div>
+                 <div class="key-btn" style="background:var(--gold); font-size:12px" onclick="fillAllColumn()">الكل</div>
+                 <button onclick="closePad()" style="grid-column:span 2; background:var(--navy); color:var(--gold); border:none; border-radius:8px; font-weight:bold;">تم</button>`;
+        pad.innerHTML = keys;
+    }
+
+    function inputValue(val) {
+        if(!activeInput) return;
+        const {sid, type} = activeInput;
+        if(!originalScores[sid]) originalScores[sid] = {};
+        originalScores[sid][type] = parseInt(val);
+        refreshRowUI(sid); saveToFirebase(sid, type, val); autoNext();
+    }
+
+    function refreshRowUI(sid) {
+        const week = document.getElementById('vWeek').value;
+        const card = document.getElementById(`row_${sid}`);
+        let scores = { ...originalScores[sid] };
+        if(week.startsWith('ex')) {
+            const inp = document.getElementById(`inp_${sid}_exam`);
+            if(inp) { inp.value = scores.exam !== undefined ? scores.exam : ''; inp.classList.add('saved'); }
+            return;
+        }
+        const absDays = Array.from(card.querySelectorAll('.day-chip.absent')).map(d => d.innerText.trim());
+        if(absDays.length >= 5) {
+            ['t','v','s'].forEach(t => { const el = document.getElementById(`inp_${sid}_${t}`); if(el) el.value = 0; });
+        } else {
+            let deduct = absDays.filter(d => d !== 'السبت').length * 2;
+            ['t','v','s'].forEach(t => {
+                const el = document.getElementById(`inp_${sid}_${t}`);
+                if(el && scores[t] !== undefined) {
+                    let fV = (t === 's') ? Math.max(0, scores[t] - deduct) : scores[t];
+                    el.value = fV;
+                    if(t === 's' && deduct > 0) el.classList.add('deducted'); else el.classList.remove('deducted');
+                    el.classList.add('saved');
+                }
+            });
+        }
+    }
+
+    function saveToFirebase(sid, type, score) {
+        const sub = document.getElementById('vSubject').value;
+        const week = document.getElementById('vWeek').value;
+        db.collection('grades').doc(`${sid}_${week}_${type}_${sub}`).set({
+            sid, week, type, subject: sub, score: parseInt(score), teacher: tId, timestamp: Date.now()
+        }, {merge:true});
+    }
+
+    function toggleAbsence(sid, day, el) {
+        el.classList.toggle('absent');
+        refreshRowUI(sid);
+        const card = document.getElementById(`row_${sid}`);
+        const absDays = Array.from(card.querySelectorAll('.day-chip.absent')).map(d => d.innerText.trim());
+        const sub = document.getElementById('vSubject').value;
+        const week = document.getElementById('vWeek').value;
+        db.collection('grades').doc(`${sid}_${week}_attendance_${sub}`).set({
+            sid, week, type: 'attendance', subject: sub, days: absDays, teacher: tId, timestamp: Date.now()
+        }, {merge:true});
+    }
+
+    function autoNext() {
+        const week = document.getElementById('vWeek').value;
+        const types = week.startsWith('ex') ? ['exam'] : ['t','v','s'];
+        let nIdx = types.indexOf(activeInput.type) + 1;
+        if(nIdx < types.length) { openPad(activeInput.sid, types[nIdx], sysConfig[`max${types[nIdx].toUpperCase()}`]); }
+        else {
+            const curI = currentStudents.findIndex(s => s.id === activeInput.sid);
+            if(curI < currentStudents.length - 1) { openPad(currentStudents[curI+1].id, types[0], week.startsWith('ex') ? sysConfig.maxExam : sysConfig.maxT); }
+            else { closePad(); }
+        }
+    }
+
+    function closePad() { document.getElementById('numPad').style.display = 'none'; }
+
+    function fillAllColumn() {
+        const val = document.getElementById(`inp_${activeInput.sid}_${activeInput.type}`).value;
+        if(val === "") return;
+        currentStudents.forEach(s => {
+            if(!originalScores[s.id]) originalScores[s.id] = {};
+            originalScores[s.id][activeInput.type] = parseInt(val);
+            refreshRowUI(s.id); saveToFirebase(s.id, activeInput.type, val);
+        });
+    }
+
+    async function generateTeacherReport() {
+        const sub = document.getElementById('vSubject').value;
+        const clsIdx = document.getElementById('vClass').value;
+        if(!sub || clsIdx === "") return alert("اختر المادة والفصل");
+        const selWeeks = Array.from(document.querySelectorAll('.week-opt:checked')).map(c => c.value);
+        if(selWeeks.length === 0) return alert("اختر أسبوعاً واحداً على الأقل");
+        
+        const pageSize = parseInt(document.getElementById('pageSize').value) || 20;
+        const incAbs = document.getElementById('incAbs').checked;
+        const incEx = document.getElementById('incEx').checked;
+        const gSnap = await db.collection('grades').where('teacher','==',tId).where('subject','==',sub).get();
+        const allGrades = gSnap.docs.map(d => d.data());
+
+        const hasP1 = selWeeks.some(w => parseInt(w.replace('w','')) <= 7);
+        const hasP2 = selWeeks.some(w => parseInt(w.replace('w','')) >= 8);
+
+        let html = `<div id="printableArea" style="background:#eee; padding:20px 0;">`;
+        for (let i = 0; i < currentStudents.length; i += pageSize) {
+            const chunk = currentStudents.slice(i, i + pageSize);
+            html += `<div class="report-page">
+                <div style="width:100%; text-align:center; margin-bottom:15px; border-bottom:2px solid var(--navy); padding-bottom:5px;">
+                    <h2 style="margin:0; font-size:18px;">مدرسة الخدمة الثانوية العامة المشتركة</h2>
+                    <div style="display:flex; justify-content:space-around; margin-top:5px; font-weight:bold; font-size:12px;">
+                        <span>المعلم: ${teacherInfo.name}</span><span>المادة: ${sub}</span><span>الفصل: ${teacherInfo.classes[clsIdx]}</span>
+                    </div>
+                </div>
+                <table dir="rtl">
+                    <thead>
+                        <tr>
+                            <th rowspan="2" class="header-main" style="width:30px;">م</th>
+                            <th rowspan="2" class="header-main" style="width:160px;">اسم الطالب</th>
+                            ${selWeeks.map((w) => `<th colspan="3" class="week-header-style thick-border-right thick-border-left">أسبوع ${w.replace('w','')}</th>`).join('')}
+                            <th colspan="3" class="header-main thick-border-right thick-border-left" style="background:#c5a059 !important; color:#000 !important;">المتوسطات العامة</th>
+                            ${incAbs ? `<th rowspan="2" class="header-main thick-border-right thick-border-left">غياب</th>` : ''}
+                            ${incEx ? `<th rowspan="2" class="header-main thick-border-right thick-border-left">الاختبار</th>` : ''}
+                        </tr>
+                        <tr>
+                            ${selWeeks.map(() => `<th class="sub-head thick-border-right">ت</th><th class="sub-head">و</th><th class="sub-head thick-border-left">س</th>`).join('')}
+                            <th class="sub-head thick-border-right" style="background:#fef3c7 !important;">م.ت</th>
+                            <th class="sub-head" style="background:#fef3c7 !important;">م.و</th>
+                            <th class="sub-head thick-border-left" style="background:#fef3c7 !important;">م.س</th>
+                        </tr>
+                    </thead>
+                    <tbody>`;
+            
+            chunk.forEach(st => {
+                let sg = allGrades.filter(g => g.sid === st.id);
+                let sumT=0, sumV=0, sumS=0, count=0, totalAbsCount=0;
+                let rowHtml = `<tr><td>${st.sortOrder}</td><td style="text-align:right; padding-right:5px; font-weight:bold;">${st.name}</td>`;
+                
+                selWeeks.forEach((w) => {
+                    let attData = sg.find(g => g.week === w && g.type === 'attendance')?.days || [];
+                    let wt = sg.find(g => g.week === w && g.type === 't')?.score || 0;
+                    let wv = sg.find(g => g.week === w && g.type === 'v')?.score || 0;
+                    let ws = sg.find(g => g.week === w && g.type === 's')?.score || 0;
+                    let attList = attData.map(day => day.trim());
+                    if(attList.length >= 5) { wt = 0; wv = 0; ws = 0; }
+                    else { let dDays = attList.filter(d => d !== 'السبت' && d !== '').length; ws = Math.max(0, ws - (dDays * 2)); }
+                    rowHtml += `<td class="thick-border-right">${wt||'-'}</td><td>${wv||'-'}</td><td class="thick-border-left">${ws||'-'}</td>`;
+                    sumT += wt; sumV += wv; sumS += ws; count++; totalAbsCount += attList.length;
+                });
+
+                let aT = count>0 ? (sumT/count).toFixed(1) : 0; let aV = count>0 ? (sumV/count).toFixed(1) : 0; let aS = count>0 ? (sumS/count).toFixed(1) : 0;
+                let examFinal = 0; const ex1 = sg.find(g => g.week === 'ex1')?.score || 0; const ex2 = sg.find(g => g.week === 'ex2')?.score || 0;
+                if (hasP1 && hasP2) examFinal = ex1 + ex2; else if (hasP2) examFinal = ex2; else examFinal = ex1;
+
+                rowHtml += `<td class="thick-border-right" style="font-weight:bold; background:#f0f9ff;">${aT}</td><td style="background:#f0f9ff;">${aV}</td><td class="thick-border-left" style="background:#f0f9ff;">${aS}</td>
+                            ${incAbs ? `<td class="thick-border-right thick-border-left" style="color:red; font-weight:bold;">${totalAbsCount}</td>` : ''}
+                            ${incEx ? `<td class="thick-border-right thick-border-left" style="font-weight:bold;">${examFinal}</td>` : ''}</tr>`;
+                html += rowHtml;
+            });
+            html += `</tbody></table>
+                <div style="width:100%; margin-top:auto; display:flex; justify-content:space-between; font-size:10px; font-weight:bold; padding-top:10px; border-top:1px solid #eee;">
+                    <span>توقيع المعلم: ........................</span><span>مدير المدرسة: ........................</span><span>تحريراً في: ${new Date().toLocaleDateString('ar-EG')}</span>
+                </div>
+            </div>`;
+        }
+        html += `</div>`;
+        document.getElementById('reportPreview').innerHTML = html;
+        document.getElementById('exportTools').style.display = 'block';
+    }
+
+    function exportReport(fmt) {
+        const name = `كشف_${teacherInfo.name}_${document.getElementById('vSubject').value}`;
+        if(fmt==='excel') {
+            const wb = XLSX.utils.book_new(); const allTables = document.querySelectorAll("#reportPreview table");
+            allTables.forEach((table, idx) => { const ws = XLSX.utils.table_to_sheet(table); XLSX.utils.book_append_sheet(wb, ws, `P${idx + 1}`); });
+            XLSX.writeFile(wb, name + '.xlsx');
+        } 
+        else if(fmt==='pdf') {
+            const el = document.getElementById('printableArea');
+            const opt = { margin:0, filename: name+'.pdf', image:{type:'jpeg', quality:0.98}, html2canvas:{scale:2}, jsPDF:{unit:'mm', format:'a4', orientation:'landscape'} };
+            html2pdf().from(el).set(opt).save();
+        } 
+        else if(fmt==='png') {
+            const pages = document.querySelectorAll('.report-page');
+            pages.forEach((page, idx) => { html2canvas(page, { scale: 2 }).then(canvas => { let link = document.createElement('a'); link.download = `${name}_P${idx+1}.png`; link.href = canvas.toDataURL(); link.click(); }); });
+        }
+    }
+    function logout() { sessionStorage.clear(); window.location.href="index.html"; }
+</script>
+</body>
+</html>
