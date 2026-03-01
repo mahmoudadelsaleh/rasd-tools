@@ -29,12 +29,6 @@
         .card { background: white; border-radius: 12px; padding: 15px; margin-bottom: 10px; border: 1px solid #e2e8f0; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
         .active-row { border: 2px solid var(--blue) !important; background: #f0f7ff !important; }
 
-        #reportPreview table { width: 100%; border-collapse: collapse; font-size: 11px; background: white; border: 1px solid #000; }
-        #reportPreview th, #reportPreview td { border: 1px solid #000; padding: 4px; text-align: center; }
-        #reportPreview th { background: #f8fafc; color: var(--navy); }
-        .header-main { background: var(--navy) !important; color: white !important; }
-        .sub-head { background: #e2e8f0 !important; font-size: 9px; font-weight: bold; }
-
         .smart-keyboard { position: fixed; bottom: 20px; left: 10px; right: 10px; background: #e2e8f0; padding: 10px; display: none; grid-template-columns: repeat(5, 1fr); gap: 6px; z-index: 2000; border-radius: 15px; border: 2px solid var(--gold); }
         .key-btn { background: white; border-radius: 8px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; height: 45px; border: 1px solid #94a3b8; }
         .score-sel { width: 40px; height: 35px; font-weight: bold; text-align: center; border-radius: 5px; border: 1px solid #cbd5e1; transition: 0.1s; }
@@ -49,6 +43,29 @@
         .day-chip.absent { background: var(--danger); }
         .weeks-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 5px; margin: 10px 0; }
         #studentList { padding-bottom: 250px; }
+
+        /* Report Specific Styling - Printing Ready */
+        .report-page {
+            width: 287mm; 
+            min-height: 200mm;
+            padding: 10mm;
+            margin: 20px auto;
+            background: white;
+            box-shadow: 0 0 15px rgba(0,0,0,0.2);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            box-sizing: border-box;
+            page-break-after: always;
+        }
+
+        #reportPreview table { width: 100%; border-collapse: collapse; font-size: 11px; background: white; border: 1px solid #000; table-layout: fixed; }
+        #reportPreview th, #reportPreview td { border: 1px solid #000; padding: 5px 2px; text-align: center; overflow: hidden; }
+        
+        .week-sep { border-left: 3px solid #000 !important; }
+        .header-main { background: var(--navy) !important; color: white !important; font-weight: bold; }
+        .sub-head { background: #e2e8f0 !important; font-size: 9px; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -165,7 +182,6 @@
         currentStudents.forEach((s) => {
             const sd = data[s.id] || { scores: {}, attendance: [] };
             originalScores[s.id] = { ...sd.scores };
-            
             let displayScores = { ...sd.scores };
             if(!week.startsWith('ex')) {
                 let att = sd.attendance || [];
@@ -175,7 +191,6 @@
                     if(displayScores.s !== undefined) displayScores.s = Math.max(0, displayScores.s - (deductDays * 2));
                 }
             }
-
             html += `<div class="card" id="row_${s.id}">
                 <div style="display:flex; justify-content:space-between; align-items:center;">
                     <span style="font-size:12px; font-weight:bold;">${s.sortOrder}. ${s.name}</span>
@@ -215,11 +230,7 @@
         document.querySelectorAll('.score-sel').forEach(i => i.classList.remove('active-input-highlight'));
         const targetInput = document.getElementById(`inp_${sid}_${type}`);
         targetInput.classList.add('active-input-highlight');
-
-        const offset = 160; 
-        const elementPosition = activeCard.getBoundingClientRect().top + window.pageYOffset;
-        window.scrollTo({ top: elementPosition - offset, behavior: 'smooth' });
-
+        const offset = 160; window.scrollTo({ top: (activeCard.getBoundingClientRect().top + window.pageYOffset) - offset, behavior: 'smooth' });
         const pad = document.getElementById('numPad');
         pad.style.display = 'grid';
         let keys = '';
@@ -235,7 +246,6 @@
         const {sid, type} = activeInput;
         if(!originalScores[sid]) originalScores[sid] = {};
         originalScores[sid][type] = parseInt(val);
-        
         refreshRowUI(sid);
         saveToFirebase(sid, type, val);
         autoNext();
@@ -245,18 +255,11 @@
         const week = document.getElementById('vWeek').value;
         const card = document.getElementById(`row_${sid}`);
         let scores = { ...originalScores[sid] };
-
-        // إصلاح الرصد اللحظي للاختبارات
         if(week.startsWith('ex')) {
             const inp = document.getElementById(`inp_${sid}_exam`);
-            if(inp) {
-                inp.value = scores.exam !== undefined ? scores.exam : '';
-                inp.classList.add('saved');
-            }
+            if(inp) { inp.value = scores.exam !== undefined ? scores.exam : ''; inp.classList.add('saved'); }
             return;
         }
-
-        // الرصد الأسبوعي العادي مع الخصم
         const absDays = Array.from(card.querySelectorAll('.day-chip.absent')).map(d => d.innerText.trim());
         if(absDays.length >= 5) {
             ['t','v','s'].forEach(t => { const el = document.getElementById(`inp_${sid}_${t}`); if(el) el.value = 0; });
@@ -298,13 +301,11 @@
         const week = document.getElementById('vWeek').value;
         const types = week.startsWith('ex') ? ['exam'] : ['t','v','s'];
         let nIdx = types.indexOf(activeInput.type) + 1;
-        if(nIdx < types.length) {
-            openPad(activeInput.sid, types[nIdx], sysConfig[`max${types[nIdx].toUpperCase()}`]);
-        } else {
+        if(nIdx < types.length) { openPad(activeInput.sid, types[nIdx], sysConfig[`max${types[nIdx].toUpperCase()}`]); }
+        else {
             const curI = currentStudents.findIndex(s => s.id === activeInput.sid);
-            if(curI < currentStudents.length - 1) {
-                openPad(currentStudents[curI+1].id, types[0], week.startsWith('ex') ? sysConfig.maxExam : sysConfig.maxT);
-            } else { closePad(); }
+            if(curI < currentStudents.length - 1) { openPad(currentStudents[curI+1].id, types[0], week.startsWith('ex') ? sysConfig.maxExam : sysConfig.maxT); }
+            else { closePad(); }
         }
     }
 
@@ -316,8 +317,7 @@
         currentStudents.forEach(s => {
             if(!originalScores[s.id]) originalScores[s.id] = {};
             originalScores[s.id][activeInput.type] = parseInt(val);
-            refreshRowUI(s.id);
-            saveToFirebase(s.id, activeInput.type, val);
+            refreshRowUI(s.id); saveToFirebase(s.id, activeInput.type, val);
         });
     }
 
@@ -327,80 +327,65 @@
         if(!sub || clsIdx === "") return alert("اختر المادة والفصل");
         const selWeeks = Array.from(document.querySelectorAll('.week-opt:checked')).map(c => c.value);
         if(selWeeks.length === 0) return alert("اختر أسبوعاً واحداً على الأقل");
-
         const pageSize = parseInt(document.getElementById('pageSize').value) || 20;
         const incAbs = document.getElementById('incAbs').checked;
         const incEx = document.getElementById('incEx').checked;
-
         const gSnap = await db.collection('grades').where('teacher','==',tId).where('subject','==',sub).get();
         const allGrades = gSnap.docs.map(d => d.data());
 
-        let html = `<div id="printableArea" dir="rtl" style="background:white; padding:15px;">`;
-
+        let html = `<div id="printableArea" style="background:#eee; padding:20px 0;">`;
         for (let i = 0; i < currentStudents.length; i += pageSize) {
             const chunk = currentStudents.slice(i, i + pageSize);
-            html += `
-            <div style="page-break-after:always; margin-bottom:30px;">
-                <div style="text-align:center; border:1px solid #000; padding:10px; margin-bottom:10px;">
-                    <h3 style="margin:0;">كشف درجات تفصيلي - مدرسة محمود عادل</h3>
-                    <p style="margin:5px 0;">المعلم: ${teacherInfo.name} | المادة: ${sub} | الفصل: ${teacherInfo.classes[clsIdx]}</p>
+            html += `<div class="report-page">
+                <div style="width:100%; text-align:center; margin-bottom:15px; border-bottom:2px solid var(--navy); padding-bottom:5px;">
+                    <h2 style="margin:0; font-size:18px;">كشف درجات تفصيلي - مدرسة محمود عادل</h2>
+                    <div style="display:flex; justify-content:space-around; margin-top:5px; font-weight:bold; font-size:12px;">
+                        <span>المعلم: ${teacherInfo.name}</span><span>المادة: ${sub}</span><span>الفصل: ${teacherInfo.classes[clsIdx]}</span>
+                    </div>
                 </div>
-                <table>
+                <table dir="rtl">
                     <thead>
                         <tr>
-                            <th rowspan="2" class="header-main">م</th>
-                            <th rowspan="2" class="header-main" style="min-width:120px;">اسم الطالب</th>
-                            ${selWeeks.map(w => `<th colspan="3" class="header-main">أسبوع ${w.replace('w','')}</th>`).join('')}
-                            <th colspan="3" class="header-main" style="background:#c5a059 !important; color:#000 !important;">المتوسطات العامة</th>
-                            ${incAbs ? `<th rowspan="2" class="header-main">غياب</th>` : ''}
-                            ${incEx ? `<th rowspan="2" class="header-main">اختبار</th>` : ''}
+                            <th rowspan="2" class="header-main" style="width:30px;">م</th>
+                            <th rowspan="2" class="header-main" style="width:160px;">اسم الطالب</th>
+                            ${selWeeks.map((w, idx) => `<th colspan="3" class="header-main ${idx>0?'week-sep':''}">أسبوع ${w.replace('w','')}</th>`).join('')}
+                            <th colspan="3" class="header-main week-sep" style="background:#c5a059 !important; color:#000 !important;">المتوسطات العامة</th>
+                            ${incAbs ? `<th rowspan="2" class="header-main week-sep">غياب</th>` : ''}
+                            ${incEx ? `<th rowspan="2" class="header-main week-sep">اختبار</th>` : ''}
                         </tr>
                         <tr>
-                            ${selWeeks.map(() => `<th class="sub-head">ت</th><th class="sub-head">و</th><th class="sub-head">س</th>`).join('')}
-                            <th class="sub-head" style="background:#fef3c7 !important;">م.ت</th>
-                            <th class="sub-head" style="background:#fef3c7 !important;">م.و</th>
-                            <th class="sub-head" style="background:#fef3c7 !important;">م.س</th>
+                            ${selWeeks.map((w, idx) => `<th class="sub-head ${idx>0?'week-sep':''}">ت</th><th class="sub-head">و</th><th class="sub-head">س</th>`).join('')}
+                            <th class="sub-head week-sep" style="background:#fef3c7 !important;">م.ت</th><th class="sub-head" style="background:#fef3c7 !important;">م.و</th><th class="sub-head" style="background:#fef3c7 !important;">م.س</th>
                         </tr>
                     </thead>
                     <tbody>`;
-
             chunk.forEach(st => {
                 let sg = allGrades.filter(g => g.sid === st.id);
                 let sumT=0, sumV=0, sumS=0, count=0, totalAbsCount=0;
-                let rowHtml = `<tr><td>${st.sortOrder}</td><td style="text-align:right;">${st.name}</td>`;
-
-                selWeeks.forEach(w => {
+                let rowHtml = `<tr><td>${st.sortOrder}</td><td style="text-align:right; padding-right:5px; font-weight:bold;">${st.name}</td>`;
+                selWeeks.forEach((w, idx) => {
                     let attData = sg.find(g => g.week === w && g.type === 'attendance')?.days || [];
                     let wt = sg.find(g => g.week === w && g.type === 't')?.score || 0;
                     let wv = sg.find(g => g.week === w && g.type === 'v')?.score || 0;
                     let ws = sg.find(g => g.week === w && g.type === 's')?.score || 0;
-
-                    let attendanceList = attData.map(day => day.trim());
-                    if(attendanceList.length >= 5) { 
-                        wt = 0; wv = 0; ws = 0;
-                    } else {
-                        let deductDays = attendanceList.filter(d => d !== 'السبت' && d !== '').length;
-                        ws = Math.max(0, ws - (deductDays * 2));
-                    }
-
-                    rowHtml += `<td>${wt||'-'}</td><td>${wv||'-'}</td><td>${ws||'-'}</td>`;
-                    sumT += wt; sumV += wv; sumS += ws; count++;
-                    totalAbsCount += attendanceList.length;
+                    let attList = attData.map(day => day.trim());
+                    if(attList.length >= 5) { wt = 0; wv = 0; ws = 0; }
+                    else { let dDays = attList.filter(d => d !== 'السبت' && d !== '').length; ws = Math.max(0, ws - (dDays * 2)); }
+                    rowHtml += `<td class="${idx>0?'week-sep':''}">${wt||'-'}</td><td>${wv||'-'}</td><td>${ws||'-'}</td>`;
+                    sumT += wt; sumV += wv; sumS += ws; count++; totalAbsCount += attList.length;
                 });
-
-                let aT = count>0 ? (sumT/count).toFixed(1) : 0;
-                let aV = count>0 ? (sumV/count).toFixed(1) : 0;
-                let aS = count>0 ? (sumS/count).toFixed(1) : 0;
+                let aT = count>0 ? (sumT/count).toFixed(1) : 0; let aV = count>0 ? (sumV/count).toFixed(1) : 0; let aS = count>0 ? (sumS/count).toFixed(1) : 0;
                 let exV = incEx ? sg.filter(g => g.week.startsWith('ex')).reduce((a,b) => a + (b.score || 0), 0) : 0;
-
-                rowHtml += `<td style="font-weight:bold; background:#f0f9ff;">${aT}</td>
-                            <td style="background:#f0f9ff;">${aV}</td>
-                            <td style="background:#f0f9ff;">${aS}</td>
-                            ${incAbs ? `<td style="color:red; font-weight:bold;">${totalAbsCount}</td>` : ''}
-                            ${incEx ? `<td style="font-weight:bold;">${exV}</td>` : ''}</tr>`;
+                rowHtml += `<td class="week-sep" style="font-weight:bold; background:#f0f9ff;">${aT}</td><td style="background:#f0f9ff;">${aV}</td><td style="background:#f0f9ff;">${aS}</td>
+                            ${incAbs ? `<td class="week-sep" style="color:red; font-weight:bold;">${totalAbsCount}</td>` : ''}
+                            ${incEx ? `<td class="week-sep" style="font-weight:bold;">${exV}</td>` : ''}</tr>`;
                 html += rowHtml;
             });
-            html += `</tbody></table></div>`;
+            html += `</tbody></table>
+                <div style="width:100%; margin-top:auto; display:flex; justify-content:space-between; font-size:10px; font-weight:bold; padding-top:10px; border-top:1px solid #eee;">
+                    <span>توقيع المعلم: ........................</span><span>مدير المدرسة: ........................</span><span>تحريراً في: ${new Date().toLocaleDateString('ar-EG')}</span>
+                </div>
+            </div>`;
         }
         html += `</div>`;
         document.getElementById('reportPreview').innerHTML = html;
@@ -408,11 +393,29 @@
     }
 
     function exportReport(fmt) {
-        const el = document.getElementById('printableArea');
         const name = `كشف_${teacherInfo.name}_${document.getElementById('vSubject').value}`;
-        if(fmt==='pdf') html2pdf().from(el).set({margin:5, filename: name+'.pdf', html2canvas:{scale:2}, jsPDF: { orientation: 'landscape' }}).save();
-        else if(fmt==='png') html2canvas(el).then(c => { let l=document.createElement('a'); l.download=name+'.png'; l.href=c.toDataURL(); l.click(); });
-        else if(fmt==='excel') XLSX.writeFile(XLSX.utils.table_to_book(el), name+'.xlsx');
+        if(fmt==='excel') {
+            const wb = XLSX.utils.book_new();
+            const allTables = document.querySelectorAll("#reportPreview table");
+            allTables.forEach((table, idx) => {
+                const ws = XLSX.utils.table_to_sheet(table);
+                XLSX.utils.book_append_sheet(wb, ws, `صفحة ${idx + 1}`);
+            });
+            XLSX.writeFile(wb, name + '.xlsx');
+        } 
+        else if(fmt==='pdf') {
+            const el = document.getElementById('printableArea');
+            const opt = { margin:0, filename: name+'.pdf', image:{type:'jpeg', quality:0.98}, html2canvas:{scale:2}, jsPDF:{unit:'mm', format:'a4', orientation:'landscape'} };
+            html2pdf().from(el).set(opt).save();
+        } 
+        else if(fmt==='png') {
+            const pages = document.querySelectorAll('.report-page');
+            pages.forEach((page, idx) => {
+                html2canvas(page, { scale: 2 }).then(canvas => {
+                    let link = document.createElement('a'); link.download = `${name}_P${idx+1}.png`; link.href = canvas.toDataURL(); link.click();
+                });
+            });
+        }
     }
     function logout() { sessionStorage.clear(); window.location.href="index.html"; }
 </script>
